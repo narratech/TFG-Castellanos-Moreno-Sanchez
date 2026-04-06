@@ -4,7 +4,6 @@ warnings.filterwarnings("ignore")
 import argparse
 import os
 
-
 # ============================================================
 # 📦 IMPORTS
 # ============================================================
@@ -18,6 +17,9 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import confusion_matrix
 from onehot_loader import cargar_csv_onehot
+
+# Ignorar específicamente los warnings de ONNX / torchvision
+warnings.filterwarnings("ignore", category=UserWarning, module="torch.onnx._internal.exporter.exporter_registration")
 
 # ============================================================
 # 🔧 CONFIGURACIÓN
@@ -216,7 +218,7 @@ def export_to_onnx(model, dataset, device):
         dummy_input,
         onnx_path,
         export_params=True,
-        opset_version=17,
+        opset_version=18,
         do_constant_folding=True,
         input_names=["input"],
         output_names=["output"],

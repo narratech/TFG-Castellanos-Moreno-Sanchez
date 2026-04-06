@@ -74,6 +74,32 @@ if ERRORLEVEL 1 (
 del temp_check.py
 
 REM -----------------------------
+REM 6) Comprobar e instalar torchvision
+REM -----------------------------
+echo import importlib.util> temp_check.py
+echo import sys>> temp_check.py
+echo import subprocess>> temp_check.py
+echo def install(pkg):>> temp_check.py
+echo     subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])>> temp_check.py
+echo def is_installed(pkg):>> temp_check.py
+echo     return importlib.util.find_spec(pkg) is not None>> temp_check.py
+echo if not is_installed("torchvision"):>> temp_check.py
+echo     print("Instalando torchvision...")>> temp_check.py
+echo     install("torchvision")>> temp_check.py
+echo else:>> temp_check.py
+echo     print("torchvision ya instalado.")>> temp_check.py
+
+python temp_check.py
+if ERRORLEVEL 1 (
+    echo Error instalando torchvision. Pulsa Intro para salir.
+    pause
+    del temp_check.py
+    exit /b 1
+)
+
+del temp_check.py
+
+REM -----------------------------
 REM 6) Comprobar e instalar matplotlib
 REM -----------------------------
 echo import importlib.util> temp_check.py
