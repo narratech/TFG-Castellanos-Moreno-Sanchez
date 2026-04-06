@@ -25,9 +25,9 @@ args = parser.parse_args()
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-CSV_PATH = os.path.join("datatest", config['Dataset']['TESTER_CSV_NAME'])
+CSV_PATH = os.path.join("dataset", config['Dataset']['TESTER_CSV_NAME'])
 MODEL_PATH = "models/gru_model.pth"
-CSV_OUTPUT = "datatest/predicted.csv"
+CSV_OUTPUT = "dataset/predicted.csv"
 
 SEQUENCE_LENGTH = int(config['Dataset']['SEQUENCE_LENGTH'])
 

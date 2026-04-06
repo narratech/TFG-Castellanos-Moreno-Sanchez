@@ -1,147 +1,296 @@
+import configparser
+import os
+
+# ============================================================
+# 📦 IMPORTS
+# ============================================================
+
 import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
-from sklearn.preprocessing import MinMaxScaler
+import torch.optim as optim
+from onehot_loader import cargar_csv_onehot
 
-# ======================
-# CONFIG
-# ======================
-SEQ_LEN = 35
-INPUT_DIM = 3        # <-- AJUSTA ESTO
-Y_DIM = 4            # <-- nº emociones
-LATENT_DIM = 16
-BATCH_SIZE = 64
-EPOCHS = 30
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+# =========================================================
+# 🔹 CONFIGURACIÓN
+# =========================================================
 
-INPUT_CSV = "data.csv"
-OUTPUT_CSV = "synthetic_data.csv"
+config = configparser.ConfigParser()
+config.read('config.ini')
 
-# ======================
-# LOAD DATA
-# ======================
-df = pd.read_csv(INPUT_CSV)
+CSV_FOLDER = "dataset/"
+DATASET_PATH = CSV_FOLDER + config['Dataset']['CSV_NAME']
+OUTPUT_CSV = CSV_FOLDER + "generated_" + os.path.basename(DATASET_PATH)
 
-X = df.iloc[:, :-Y_DIM].values
-y = df.iloc[:, -Y_DIM:].values
+OUTPUT_COLUMNS = list(map(str, config['Dataset']['OUTPUT_NAMES'].split(',')))
 
-# reshape a secuencia
-X = X.reshape(-1, SEQ_LEN, INPUT_DIM)
+LATENT_SIZE = int(config['Autoencoder']['LATENT_SIZE'])
+HIDDEN_SIZE = int(config['Autoencoder']['HIDDEN_SIZE'])
+HIDDEN_NUM = int(config['Autoencoder']['HIDDEN_NUM'])
+EPOCHS = int(config['Autoencoder']['EPOCHS'])
+BATCH_SIZE = int(config['Autoencoder']['BATCH_SIZE'])
+LR = float(config['Autoencoder']['LEARNING_RATE'])
+BETA = float(config['Autoencoder']['BETA_VAE'])
+N_SYNTHETIC = int(config['Autoencoder']['N_SYNTHETIC'])
 
-# normalizar X
-scaler = MinMaxScaler()
-X_flat = X.reshape(-1, INPUT_DIM)
-X_flat = scaler.fit_transform(X_flat)
-X = X_flat.reshape(-1, SEQ_LEN, INPUT_DIM)
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-X_tensor = torch.tensor(X, dtype=torch.float32)
-y_tensor = torch.tensor(y, dtype=torch.float32)
+# =========================================================
+# CARGA
+# =========================================================
+def cargar_datos():
+    X, Y, categorical_info, columnas = cargar_csv_onehot(
+        DATASET_PATH,
+        OUTPUT_COLUMNS,
+        return_dataframe=False
+    )
 
-dataset = TensorDataset(X_tensor, y_tensor)
-loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+    X = torch.tensor(X, dtype=torch.float32)
+    Y = torch.tensor(Y, dtype=torch.float32)
 
-# ======================
-# MODEL
-# ======================
-class CVAE(nn.Module):
-    def __init__(self):
+    # mapear columnas a índices
+    col_to_idx = {col: i for i, col in enumerate(columnas)}
+
+    cat_groups = []
+    for cols in categorical_info.values():
+        group_idx = [col_to_idx[c] for c in cols]
+        cat_groups.append(group_idx)
+
+    cat_idx = sorted([i for g in cat_groups for i in g])
+    num_idx = [i for i in range(X.shape[1]) if i not in cat_idx]
+
+    return X, Y, columnas, cat_groups, cat_idx, num_idx
+
+
+# =========================================================
+# MODELO
+# =========================================================
+class VAE(nn.Module):
+    def __init__(self, input_dim, target_dim):
         super().__init__()
-        
-        self.encoder_gru = nn.GRU(INPUT_DIM + Y_DIM, 64, batch_first=True)
-        self.fc_mu = nn.Linear(64, LATENT_DIM)
-        self.fc_logvar = nn.Linear(64, LATENT_DIM)
 
-        self.decoder_gru = nn.GRU(LATENT_DIM + Y_DIM, 64, batch_first=True)
-        self.output_layer = nn.Linear(64, INPUT_DIM)
+        total_dim = input_dim + target_dim
+
+        encoder_layers = []
+        in_dim = total_dim
+        for _ in range(HIDDEN_NUM):
+            encoder_layers.append(nn.Linear(in_dim, HIDDEN_SIZE))
+            encoder_layers.append(nn.ReLU())
+            in_dim = HIDDEN_SIZE
+        self.encoder = nn.Sequential(*encoder_layers)
+
+        self.fc_mu = nn.Linear(HIDDEN_SIZE, LATENT_SIZE)
+        self.fc_logvar = nn.Linear(HIDDEN_SIZE, LATENT_SIZE)
+
+        decoder_layers = []
+        in_dim = LATENT_SIZE
+        for _ in range(HIDDEN_NUM):
+            decoder_layers.append(nn.Linear(in_dim, HIDDEN_SIZE))
+            decoder_layers.append(nn.ReLU())
+            in_dim = HIDDEN_SIZE
+        self.decoder = nn.Sequential(*decoder_layers)
+
+        self.output_x = nn.Linear(HIDDEN_SIZE, input_dim)
+        self.output_y = nn.Linear(HIDDEN_SIZE, target_dim)
 
     def encode(self, x, y):
-        y_expanded = y.unsqueeze(1).repeat(1, SEQ_LEN, 1)
-        inp = torch.cat([x, y_expanded], dim=-1)
-        _, h = self.encoder_gru(inp)
-        h = h.squeeze(0)
+        xy = torch.cat([x, y], dim=1)
+        h = self.encoder(xy)
         return self.fc_mu(h), self.fc_logvar(h)
 
-    def reparametrize(self, mu, logvar):
+    def reparameterize(self, mu, logvar):
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return mu + eps * std
 
-    def decode(self, z, y):
-        z_expanded = z.unsqueeze(1).repeat(1, SEQ_LEN, 1)
-        y_expanded = y.unsqueeze(1).repeat(1, SEQ_LEN, 1)
-        inp = torch.cat([z_expanded, y_expanded], dim=-1)
-        out, _ = self.decoder_gru(inp)
-        return self.output_layer(out)
+    def decode(self, z):
+        h = self.decoder(z)
+
+        x_logits = self.output_x(h)   # SIN sigmoid aquí
+        y = torch.sigmoid(self.output_y(h))
+
+        return x_logits, y
 
     def forward(self, x, y):
         mu, logvar = self.encode(x, y)
-        z = self.reparametrize(mu, logvar)
-        x_recon = self.decode(z, y)
-        return x_recon, mu, logvar
+        z = self.reparameterize(mu, logvar)
+        x_logits, y_recon = self.decode(z)
+        return x_logits, y_recon, mu, logvar
 
-model = CVAE().to(DEVICE)
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-# ======================
+# =========================================================
 # LOSS
-# ======================
-def loss_fn(x_recon, x, mu, logvar):
-    recon = nn.MSELoss()(x_recon, x)
-    kld = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
-    return recon + 0.001 * kld
+# =========================================================
+def loss_function(x_logits, x, y_recon, y, mu, logvar,
+                  cat_groups, num_idx, beta=BETA):
+    """
+    x_logits: output del decoder antes de softmax/sigmoid
+    x: input original
+    y_recon: target continuo reconstruido
+    y: target original
+    cat_groups: lista de listas de índices categóricos
+    num_idx: índices de columnas numéricas
+    beta: factor KL
+    """
+    loss = 0.0
 
-# ======================
-# TRAIN
-# ======================
-for epoch in range(EPOCHS):
+    # --- CATEGÓRICAS ---
+    for group in cat_groups:
+        logits = x_logits[:, group]  # [batch, n_cats]
+        target = torch.argmax(x[:, group], dim=1)  # clase como entero
+        loss += nn.functional.cross_entropy(logits, target, reduction='mean')
+
+    # --- NUMÉRICAS ---
+    if len(num_idx) > 0:
+        x_num = x[:, num_idx]
+        x_num_recon = torch.sigmoid(x_logits[:, num_idx])
+        loss += nn.functional.mse_loss(x_num_recon, x_num, reduction='mean')
+
+    # --- TARGETS ---
+    loss += nn.functional.mse_loss(y_recon, y, reduction='mean')
+
+    # --- KL ---
+    KLD = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
+
+    return loss + beta * KLD
+
+
+# =========================================================
+# ENTRENAMIENTO
+# =========================================================
+def entrenar(model, X, Y, cat_groups, num_idx):
+    optimizer = optim.Adam(model.parameters(), lr=LR)
+
+    dataset = torch.utils.data.TensorDataset(X, Y)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+
     model.train()
-    total_loss = 0
-    
-    for xb, yb in loader:
-        xb, yb = xb.to(DEVICE), yb.to(DEVICE)
-        
-        optimizer.zero_grad()
-        x_recon, mu, logvar = model(xb, yb)
-        loss = loss_fn(x_recon, xb, mu, logvar)
-        loss.backward()
-        optimizer.step()
-        
-        total_loss += loss.item()
-    
-    print(f"Epoch {epoch+1}, Loss: {total_loss:.4f}")
 
-# ======================
-# GENERATE NEW DATA
-# ======================
-model.eval()
+    for epoch in range(EPOCHS):
+        total_loss = 0
 
-NUM_NEW_SAMPLES = len(X)  # puedes cambiar esto
+        for x_batch, y_batch in loader:
+            x_batch = x_batch.to(DEVICE)
+            y_batch = y_batch.to(DEVICE)
 
-# sample y reales (mejor distribución)
-y_sample = y_tensor[np.random.choice(len(y_tensor), NUM_NEW_SAMPLES)]
+            optimizer.zero_grad()
 
-z = torch.randn(NUM_NEW_SAMPLES, LATENT_DIM).to(DEVICE)
-y_sample = y_sample.to(DEVICE)
+            x_logits, y_recon, mu, logvar = model(x_batch, y_batch)
 
-with torch.no_grad():
-    X_fake = model.decode(z, y_sample)
+            loss = loss_function(
+                x_logits, x_batch,
+                y_recon, y_batch,
+                mu, logvar,
+                cat_groups, num_idx
+            )
 
-X_fake = X_fake.cpu().numpy()
-y_sample = y_sample.cpu().numpy()
+            loss.backward()
+            optimizer.step()
 
-# desnormalizar X
-X_fake_flat = X_fake.reshape(-1, INPUT_DIM)
-X_fake_flat = scaler.inverse_transform(X_fake_flat)
-X_fake = X_fake_flat.reshape(NUM_NEW_SAMPLES, -1)
+            total_loss += loss.item()
 
-# combinar con y
-synthetic = np.concatenate([X_fake, y_sample], axis=1)
+        if (epoch + 1) % 10 == 0:
+            print(f"Epoch {epoch+1}/{EPOCHS}, Loss: {total_loss:.2f}")
 
-# guardar CSV
-columns = list(df.columns)
-synthetic_df = pd.DataFrame(synthetic, columns=columns)
-synthetic_df.to_csv(OUTPUT_CSV, index=False)
 
-print("✅ Dataset sintético guardado en:", OUTPUT_CSV)
+# =========================================================
+# GENERACIÓN
+# =========================================================
+def generar_datos(model, num_samples, cat_groups, num_idx):
+    model.eval()
+
+    z = torch.randn(num_samples, LATENT_SIZE).to(DEVICE)
+
+    with torch.no_grad():
+        x_logits, y_gen = model.decode(z)
+
+    x_logits = x_logits.cpu()
+    X_gen = torch.zeros_like(x_logits)
+
+    # --- CATEGÓRICAS: argmax por grupo ---
+    for group in cat_groups:
+        probs = torch.softmax(x_logits[:, group], dim=1)
+        idx = torch.argmax(probs, dim=1)
+
+        for i, col in enumerate(group):
+            X_gen[:, col] = (idx == i).float()
+
+    # --- NUMÉRICAS ---
+    if len(num_idx) > 0:
+        X_gen[:, num_idx] = torch.sigmoid(x_logits[:, num_idx])
+
+    return X_gen.numpy(), y_gen.cpu().numpy()
+
+def extraer_latentes(model, X, Y):
+    model.eval()
+
+    latents = []
+
+    with torch.no_grad():
+        for i in range(0, len(X), 256):
+            x_batch = X[i:i+256].to(DEVICE)
+            y_batch = Y[i:i+256].to(DEVICE)
+
+            mu, logvar = model.encode(x_batch, y_batch)
+            latents.append(mu.cpu().numpy())
+
+    return np.vstack(latents)
+
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
+def plot_latentes(latents, Y):
+    # Reducir a 2D
+    pca = PCA(n_components=2)
+    latents_2d = pca.fit_transform(latents)
+
+    plt.figure(figsize=(8,6))
+
+    # Si hay múltiples targets, usa el primero
+    color = Y[:, 0] if Y.shape[1] > 0 else None
+
+    scatter = plt.scatter(
+        latents_2d[:, 0],
+        latents_2d[:, 1],
+        c=color,
+        alpha=0.7
+    )
+
+    if color is not None:
+        plt.colorbar(scatter, label="Target")
+
+    plt.title("Espacio latente (PCA)")
+    plt.xlabel("Componente 1")
+    plt.ylabel("Componente 2")
+
+    plt.show()
+
+# =========================================================
+# MAIN
+# =========================================================
+if __name__ == "__main__":
+    X, Y, columnas, cat_groups, cat_idx, num_idx = cargar_datos()
+
+    model = VAE(X.shape[1], Y.shape[1]).to(DEVICE)
+
+    print("Entrenando...")
+    entrenar(model, X, Y, cat_groups, num_idx)
+
+    print("Generando datos...")
+    X_gen, Y_gen = generar_datos(model, N_SYNTHETIC, cat_groups, num_idx)
+
+    data_gen = np.concatenate([X_gen, Y_gen], axis=1)
+
+    columnas_totales = columnas + OUTPUT_COLUMNS
+
+    df_gen = pd.DataFrame(data_gen, columns=columnas_totales)
+    df_gen.to_csv(OUTPUT_CSV, index=False)
+
+    print(f"Guardado en {OUTPUT_CSV}")
+
+    print("Extrayendo latentes...")
+    latents = extraer_latentes(model, X, Y)
+
+    print("Plot...")
+    plot_latentes(latents, Y.numpy())

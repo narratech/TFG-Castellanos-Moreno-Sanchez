@@ -23,11 +23,11 @@ call "%VENV_NAME%\Scripts\activate.bat"
 REM -----------------------------
 REM 4) Ejecutar autoencoder.py
 REM -----------------------------
-echo Ejecutando autoencoder.py...
-python -u src/autoencoder.py
+echo Ejecutando CVAE_GRU.py...
+python -u src/CVAE_GRU.py
 
 if ERRORLEVEL 1 (
-    echo Error ejecutando autoencoder.py. Pulsa Intro para salir.
+    echo Error ejecutando CVAE_GRU.py. Pulsa Intro para salir.
     pause
     exit /b 1
 )

@@ -42,9 +42,9 @@ EPOCHS = int(config['GRUTrain']['EPOCHS'])
 
 ONEHOT = args.onehot
 if ONEHOT:
-    CSV_PATH = os.path.join("datatest", config['Dataset']['CSV_NAME'])
+    CSV_PATH = os.path.join("dataset", config['Dataset']['CSV_NAME'])
 else:
-    CSV_PATH = os.path.join("datatest", "generated_" + config['Dataset']['CSV_NAME'])
+    CSV_PATH = os.path.join("dataset", "generated_" + config['Dataset']['CSV_NAME'])
 
 OUTPUT_COLUMNS = list(map(str, config['Dataset']['OUTPUT_NAMES'].split(',')))
 OUTPUT_SIZE = len(OUTPUT_COLUMNS)
