@@ -30,6 +30,7 @@ MODEL_PATH = "models/gru_model.pth"
 CSV_OUTPUT = "dataset/predicted.csv"
 
 SEQUENCE_LENGTH = int(config['Dataset']['SEQUENCE_LENGTH'])
+FRAME_SIZE = int(config['Dataset']['BLOCK_SIZE'])
 
 HIDDEN_SIZE = int(config['GRUTrain']['HIDDEN_SIZE'])
 NUM_LAYERS = int(config['GRUTrain']['NUM_LAYERS'])
@@ -47,25 +48,51 @@ OUTPUT_SIZE = len(OUTPUT_COLUMNS)
 # ============================================================
 
 class EmotionSequenceDataset(Dataset):
-    def __init__(self, X_raw, Y_raw, sequence_length):
-        self.inputs = X_raw
-        self.targets = Y_raw
+    def __init__(self, X_raw, Y_raw, sequence_length, frame_size):
         self.sequence_length = sequence_length
-        
+        self.frame_size = frame_size
+
+        self.sequences = []
+        self.targets = []
+
+        num_samples = len(X_raw)
+        num_blocks = num_samples // frame_size
+
+        for b in range(num_blocks):
+            start = b * frame_size
+            end = start + frame_size
+
+            X_block = X_raw[start:end]
+            Y_block = Y_raw[start:end]
+
+            for i in range(0, frame_size - sequence_length + 1):
+                x_seq = X_block[i:i + sequence_length]
+                y_seq = Y_block[i + sequence_length - 1]
+
+                self.sequences.append(x_seq)
+                self.targets.append(y_seq)
+
+        self.sequences = torch.tensor(np.array(self.sequences), dtype=torch.float32)
+        self.targets = torch.tensor(np.array(self.targets), dtype=torch.float32)
+
     @classmethod
-    def from_csv(cls, csv_path, sequence_length):
+    def from_csv(cls, csv_path, sequence_length, frame_size):
         df = pd.read_csv(csv_path)
+
+        # Si existe estructura de secuencia, respetarla
+        if "sequence_id" in df.columns:
+            df = df.sort_values(["sequence_id", "timestep"])
+
         inputs = df.iloc[:, :-OUTPUT_SIZE].values
         targets = df.iloc[:, -OUTPUT_SIZE:].values
-        return cls(inputs, targets, sequence_length)
+
+        return cls(inputs, targets, sequence_length, frame_size)
 
     def __len__(self):
-        return len(self.inputs) - self.sequence_length
+        return len(self.sequences)
 
     def __getitem__(self, idx):
-        x = self.inputs[idx:idx + self.sequence_length]
-        y = self.targets[idx + self.sequence_length - 1]
-        return torch.tensor(x, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
+        return self.sequences[idx], self.targets[idx]
 
 # ============================================================
 # 🧠 MODELO GRU (MISMA ESTRUCTURA)
@@ -126,29 +153,28 @@ def evaluate(model, loader, device):
         print("\n📊 Correlación media: no definida")
 
 
-def save_predictions_csv(model, loader, device, csv_output="predictions.csv"):
+def save_predictions_csv(model, loader, device):
     model.eval()
     all_inputs, all_preds = [], []
 
     with torch.no_grad():
         for x, y in loader:
             x = x.to(device).float()
-            y = y.to(device).float()
             y_hat = model(x).cpu().numpy()
+
             all_preds.append(y_hat)
             all_inputs.append(x.cpu().numpy())
 
-    # Concatenar todos los batches
-    all_inputs = np.concatenate(all_inputs, axis=0)  # (N, SEQ_LEN, input_dim)
-    all_preds = np.vstack(all_preds)                 # (N, OUTPUT_SIZE)
+    all_inputs = np.concatenate(all_inputs, axis=0)  # [N, seq_len, features]
+    all_preds = np.vstack(all_preds)
 
-    # Tomar la última fila de cada secuencia
-    all_inputs_last = all_inputs[:, -1, :]           # (N, input_dim)
+    # último timestep de cada secuencia
+    all_inputs_last = all_inputs[:, -1, :]
 
-    # Crear DataFrame
     df = pd.DataFrame(
         np.concatenate([all_inputs_last, all_preds], axis=1),
-        columns=[f"Input_{i+1}" for i in range(all_inputs_last.shape[1])] + OUTPUT_COLUMNS)
+        columns=[f"Input_{i+1}" for i in range(all_inputs_last.shape[1])] + OUTPUT_COLUMNS
+    )
 
     df.to_csv(CSV_OUTPUT, index=False)
     print(f"✅ Predicciones guardadas en {CSV_OUTPUT}")
@@ -165,18 +191,21 @@ if __name__ == "__main__":
     # Dataset
     dataset = None
     if(ONEHOT):
-        print(f"{CSV_PATH}")
         X_raw, Y_raw, categorical_info, feature_columns = cargar_csv_onehot(
-        ruta_csv=CSV_PATH,
-        columnas_target=OUTPUT_COLUMNS
+            ruta_csv=CSV_PATH,
+            columnas_target=OUTPUT_COLUMNS
         )
-        dataset = EmotionSequenceDataset(X_raw, Y_raw, SEQUENCE_LENGTH)
+        dataset = EmotionSequenceDataset(X_raw, Y_raw, SEQUENCE_LENGTH, FRAME_SIZE)
     else:
-        dataset = EmotionSequenceDataset.from_csv(CSV_PATH, SEQUENCE_LENGTH)
+        dataset = EmotionSequenceDataset.from_csv(
+            CSV_PATH,
+            SEQUENCE_LENGTH,
+            FRAME_SIZE
+        )
     loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     # Modelo
-    input_size = dataset.inputs.shape[1]
+    input_size = dataset.sequences.shape[2]
     model = GRUEmotionModel(input_size).to(device)
     model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
     print("✅ Modelo GRU cargado correctamente")

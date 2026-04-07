@@ -36,6 +36,7 @@ USE_CUDA = bool(config['GRUTrain']['USE_CUDA'])
 DEVICE = torch.device("cuda" if USE_CUDA and torch.cuda.is_available() else "cpu")
 HIDDEN_SIZE = int(config['GRUTrain']['HIDDEN_SIZE'])
 NUM_LAYERS = int(config['GRUTrain']['NUM_LAYERS'])
+FRAME_SIZE = int(config['Dataset']['BLOCK_SIZE'])
 SEQUENCE_LENGTH = int(config['Dataset']['SEQUENCE_LENGTH'])
 BATCH_SIZE = int(config['GRUTrain']['BATCH_SIZE'])
 LEARNING_RATE = float(config['GRUTrain']['LEARNING_RATE'])
@@ -60,25 +61,52 @@ os.makedirs("models", exist_ok=True)
 # ============================================================
 
 class EmotionSequenceDataset(Dataset):
-    def __init__(self, X_raw, Y_raw, sequence_length):
-        self.inputs = X_raw
-        self.targets = Y_raw
+    def __init__(self, X_raw, Y_raw, sequence_length, frame_size):
         self.sequence_length = sequence_length
-        
+        self.frame_size = frame_size
+
+        self.sequences = []
+        self.targets = []
+
+        num_samples = len(X_raw)
+        num_blocks = num_samples // frame_size
+
+        for b in range(num_blocks):
+            start = b * frame_size
+            end = start + frame_size
+
+            X_block = X_raw[start:end]
+            Y_block = Y_raw[start:end]
+
+            # sliding window dentro del bloque
+            for i in range(0, frame_size - sequence_length + 1):
+                x_seq = X_block[i:i + sequence_length]
+                y_seq = Y_block[i + sequence_length - 1]
+
+                self.sequences.append(x_seq)
+                self.targets.append(y_seq)
+
+        self.sequences = torch.tensor(np.array(self.sequences), dtype=torch.float32)
+        self.targets = torch.tensor(np.array(self.targets), dtype=torch.float32)
+
     @classmethod
-    def from_csv(cls, csv_path, sequence_length):
+    def from_csv(cls, csv_path, sequence_length, frame_size):
         df = pd.read_csv(csv_path)
+
+        # ⚠️ si añadiste sequence_id, lo ignoramos
+        if "sequence_id" in df.columns:
+            df = df.sort_values(["sequence_id", "timestep"])
+
         inputs = df.iloc[:, :-OUTPUT_SIZE].values
         targets = df.iloc[:, -OUTPUT_SIZE:].values
-        return cls(inputs, targets, sequence_length)
+
+        return cls(inputs, targets, sequence_length, frame_size)
 
     def __len__(self):
-        return len(self.inputs) - self.sequence_length
+        return len(self.sequences)
 
     def __getitem__(self, idx):
-        x = self.inputs[idx:idx + self.sequence_length]
-        y = self.targets[idx + self.sequence_length - 1]
-        return torch.tensor(x, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
+        return self.sequences[idx], self.targets[idx]
 
 
 # ============================================================
@@ -110,7 +138,7 @@ class GRUEmotionModel(nn.Module):
 # ============================================================
 
 def train_gru(device, dataset, loader):
-    input_size = dataset.inputs.shape[1]
+    input_size = dataset.sequences.shape[2]
 
     model = GRUEmotionModel(input_size).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -200,8 +228,8 @@ def evaluate(model, loader, device):
 # ============================================================
 def export_to_onnx(model, dataset, device):
     model.eval()
-
-    input_size = dataset.inputs.shape[1]
+    
+    input_size = dataset.sequences.shape[2]
 
     # Dummy input (batch=1, seq=35, features)
     dummy_input = torch.randn(
@@ -239,14 +267,18 @@ if __name__ == "__main__":
 
     dataset = None
 
-    if(ONEHOT):
+    if ONEHOT:
         X_raw, Y_raw, categorical_info, feature_columns = cargar_csv_onehot(
-        ruta_csv=CSV_PATH,
-        columnas_target=OUTPUT_COLUMNS
+            ruta_csv=CSV_PATH,
+            columnas_target=OUTPUT_COLUMNS
         )
-        dataset = EmotionSequenceDataset(X_raw, Y_raw, SEQUENCE_LENGTH)
+        dataset = EmotionSequenceDataset(X_raw, Y_raw, SEQUENCE_LENGTH, FRAME_SIZE)
     else:
-        dataset = EmotionSequenceDataset.from_csv(CSV_PATH, SEQUENCE_LENGTH)
+        dataset = EmotionSequenceDataset.from_csv(
+            CSV_PATH,
+            SEQUENCE_LENGTH,
+            FRAME_SIZE
+        )
 
     loader = DataLoader(dataset, BATCH_SIZE, shuffle=True)
 
