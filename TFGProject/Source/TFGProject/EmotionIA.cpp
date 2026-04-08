@@ -280,7 +280,7 @@ TArray<float> UEmotionIA::RunInference(const TArray<float>& InputData)
     const char* OutputNames[] = { OutputName };
     OrtValue* OutputTensors[1] = { nullptr };
 
-    Api->Run(
+    OrtStatus* status = Api->Run(
         InternalModel->Session,
         nullptr,             // RunOptions
         InputNames,
@@ -291,10 +291,38 @@ TArray<float> UEmotionIA::RunInference(const TArray<float>& InputData)
         OutputTensors
     );
 
+    if (status != NULL) {
+        const char* errorMsg = Api->GetErrorMessage(status);
+        FString UnrealError = UTF8_TO_TCHAR(errorMsg);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        Api->ReleaseStatus(status);
+        return Output;
+    }
+
+    if (OutputTensors[0] == NULL) {
+        UE_LOG(LogTemp, Error, TEXT("Output tensor es NULL\n"));
+        return Output;
+    }
+
     // Obtener datos de salida
     float* FloatArray = nullptr;
     Api->GetTensorMutableData(OutputTensors[0], (void**)&FloatArray);
 
+    // Obtener info del tensor
+    OrtTensorTypeAndShapeInfo* shape_info;
+    Api->GetTensorTypeAndShape(OutputTensors[0], &shape_info);
+
+    size_t size;
+    Api->GetDimensionsCount(shape_info, &size);
+
+    UE_LOG(LogTemp, Error, TEXT("Input incorrecto: el output es de tamaño %d, se esperaba de tamaño %d"), size, OutputSize);
+    return Output;
+    if (size != OutputSize) {
+        UE_LOG(LogTemp, Error, TEXT("Input incorrecto: el output es de tamaño %d, se esperaba de tamaño %d"), size, OutputSize);
+        delete FloatArray;
+        FloatArray = nullptr;
+        return Output;
+    }
     for (int i = 0; i < OutputSize; i++)
     {
         Output[i] = FloatArray[i];
@@ -307,11 +335,14 @@ TArray<float> UEmotionIA::RunInference(const TArray<float>& InputData)
     Api->AllocatorFree(Alloc, InputName);
     Api->AllocatorFree(Alloc, OutputName);
     Api->ReleaseMemoryInfo(MemoryInfo);
+    Api->ReleaseTensorTypeAndShapeInfo(shape_info);
 
     CircularIndex++;
     if (CircularIndex == SequenceLength)
         CircularIndex = 0;
 
+    delete FloatArray;
+    FloatArray = nullptr;
     return Output;
 }
 
