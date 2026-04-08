@@ -12,7 +12,7 @@ Para entrenar el modelo
 
 6) Poner la longitud de cada secuencia en SEQUENCE_LENGTH.
 
-7) Poner el tamaño del bloque del dataset en BLOCK_SIZE = 35.
+7) Poner el tamaño del bloque del dataset en BLOCK_SIZE.
 
 8) Usar training.bat o gru_onehot.bat.
 
