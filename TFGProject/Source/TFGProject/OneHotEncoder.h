@@ -14,13 +14,13 @@ class TFGPROJECT_API UOneHotEncoder : public UBlueprintFunctionLibrary
 
 public:
 
-	UFUNCTION(BlueprintCallable, Category = "EmotionIA")
+	UFUNCTION(BlueprintCallable, Category = "EmotionAI")
 	static TArray<float> OneHotEncodeWithCategories(
 		const FString& Input,
 		const TArray<FString>& Categories
 	);
 
-	UFUNCTION(BlueprintCallable, Category = "EmotionIA")
+	UFUNCTION(BlueprintCallable, Category = "EmotionAI")
 	static FString OneHotDecodeWithCategories(
 		const TArray<float>& Input,
 		const TArray<FString>& Categories

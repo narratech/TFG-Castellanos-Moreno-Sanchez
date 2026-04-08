@@ -3,12 +3,12 @@
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 
-#include "EmotionIA.generated.h"
+#include "EmotionAI.generated.h"
 
 struct FEmotionIAInternalModel;
 
 UCLASS(ClassGroup = (AI), meta = (BlueprintSpawnableComponent))
-class TFGPROJECT_API UEmotionIA : public UActorComponent
+class TFGPROJECT_API UEmotionAI : public UActorComponent
 {
     GENERATED_BODY()
 
@@ -28,25 +28,9 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "EmotionAI")
     FString ModelPath;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "EmotionAI")
-    int64 BatchSize = 1;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "EmotionAI")
-    int64 SequenceLength = 35;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "EmotionAI")
-    int32 OrdinalsSize = 0;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "EmotionAI")
-    TArray<int64> OnehotSizes;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "EmotionAI")
-    int64 OutputSize;
 private:
 
     FEmotionIAInternalModel* InternalModel = nullptr;
-
-    int64 FeatureSize;
 
     bool CheckONNXDependenciesDynamic();
 
@@ -57,4 +41,10 @@ private:
     TArray<float> LinearInput;
 
     TArray<float> Output;
+
+    int64_t SequenceLength = 0;
+
+    int64_t FeatureSize = 0;
+
+    int64_t OutputSize;
 };
