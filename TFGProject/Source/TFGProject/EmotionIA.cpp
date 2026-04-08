@@ -205,11 +205,44 @@ TArray<float> UEmotionIA::RunInference(const TArray<float>& InputData)
         return Output;
     }
 
-    if (InputData.Num() != FeatureSize)
-    {
-        UE_LOG(LogTemp, Error, TEXT("Input incorrecto: el input fue de tamaño %d"), InputData.Num());
+    //Obtener la API de Ort
+    const OrtApi* Api = OrtGetApiBase()->GetApi(ORT_VERSION);
+
+    // Crear MemoryInfo para CPU
+    OrtMemoryInfo* MemoryInfo = nullptr;
+    Api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &MemoryInfo);
+
+    OrtTypeInfo* type_info = NULL;
+
+    Api->SessionGetInputTypeInfo(
+        InternalModel->Session,
+        0, // índice de input
+        &type_info
+    );
+
+    const OrtTensorTypeAndShapeInfo* tensor_info;
+    Api->CastTypeInfoToTensorInfo(type_info, &tensor_info);
+    int64_t dims[3];
+    Api->GetDimensions(tensor_info, dims, 3);
+
+    // dims[0] = batch (-1 normalmente)
+    // dims[1] = sequence_length
+    // dims[2] = input_size
+
+    if (dims[1] != SequenceLength) {
+        UE_LOG(LogTemp, Error, TEXT("SequenceLength incorrecto: el sequence length fue de tamaño %d, se esperaba %d"), SequenceLength, dims[1]);
+        Api->ReleaseTypeInfo(type_info);
         return Output;
     }
+
+    if (dims[2] != FeatureSize)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Input incorrecto: el input fue de tamaño %d, se esperaba %d"), FeatureSize , dims[2]);
+        Api->ReleaseTypeInfo(type_info);
+        return Output;
+    }
+
+    Api->ReleaseTypeInfo(type_info);
 
     // Comprobar que la entrada no es la misma que la anterior (Quitar y delegar al desarrollador)
     bool InputIsLastOne = true;
@@ -233,13 +266,6 @@ TArray<float> UEmotionIA::RunInference(const TArray<float>& InputData)
         InputSequence[i] = InputData[i % FeatureSize];
     }
 
-    //Obtener la API de Ort
-    const OrtApi* Api = OrtGetApiBase()->GetApi(ORT_VERSION);
-
-    // Crear MemoryInfo para CPU
-    OrtMemoryInfo* MemoryInfo = nullptr;
-    Api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &MemoryInfo);
-
     // Forma del tensor
     TArray<int64> InputShape = { BatchSize, SequenceLength, FeatureSize };
 
@@ -257,13 +283,18 @@ TArray<float> UEmotionIA::RunInference(const TArray<float>& InputData)
     OrtValue* InputTensor = nullptr;
     Api->CreateTensorWithDataAsOrtValue(
         MemoryInfo,
-        const_cast<float*>(InputSequence.GetData()),   // Datos
-        InputSequence.Num() * sizeof(float),          // Tamaño en bytes
-        InputShape.GetData(),                      // Forma
+        LinearInput.GetData(),
+        LinearInput.Num() * sizeof(float),
+        InputShape.GetData(),
         InputShape.Num(),
-        ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT,       // Tipo
+        ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT,      // Tipo
         &InputTensor
     );
+
+    if (InputTensor != nullptr) {
+        UE_LOG(LogTemp, Error, TEXT("InputTensor tensor es NULL\n"));
+        return Output;
+    }
 
     // Nombres de input/output
     OrtAllocator* Alloc = nullptr;
@@ -315,8 +346,6 @@ TArray<float> UEmotionIA::RunInference(const TArray<float>& InputData)
     size_t size;
     Api->GetDimensionsCount(shape_info, &size);
 
-    UE_LOG(LogTemp, Error, TEXT("Input incorrecto: el output es de tamaño %d, se esperaba de tamaño %d"), size, OutputSize);
-    return Output;
     if (size != OutputSize) {
         UE_LOG(LogTemp, Error, TEXT("Input incorrecto: el output es de tamaño %d, se esperaba de tamaño %d"), size, OutputSize);
         delete FloatArray;
