@@ -18,7 +18,13 @@ public:
     bool InitModel();
 
     UFUNCTION(BlueprintCallable, Category = "EmotionAI")
-    TArray<float> RunInference(const TArray<float>& InputData);
+    TArray<float> RunInference();
+
+    UFUNCTION(BlueprintCallable, Category = "EmotionAI")
+    void AddTimeStep(const TArray<float>& InputData);
+
+    UFUNCTION(BlueprintCallable, Category = "EmotionAI")
+    void ChangeTimeStepsTable(const TArray<float>& InputData);
 
 protected:
 
@@ -39,8 +45,6 @@ private:
     int64 CircularIndex;
 
     TArray<float> LinearInput;
-
-    TArray<float> Output;
 
     int64_t SequenceLength = 0;
 
