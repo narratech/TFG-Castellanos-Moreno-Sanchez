@@ -18,7 +18,7 @@ public:
     bool InitModel();
 
     UFUNCTION(BlueprintCallable, Category = "EmotionAI")
-    TArray<float> RunInference();
+    TMap<FString, float> RunInference();
 
     UFUNCTION(BlueprintCallable, Category = "EmotionAI")
     void AddTimeStep(const TArray<float>& InputData);
@@ -51,4 +51,6 @@ private:
     int64_t FeatureSize = 0;
 
     int64_t OutputSize;
+
+    TArray<FString> OutputNames;
 };

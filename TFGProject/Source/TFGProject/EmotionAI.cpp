@@ -227,9 +227,9 @@ void UEmotionAI::ChangeTimeStepsTable(const TArray<float>& InputData) {
     }*/
 }
 
-TArray<float> UEmotionAI::RunInference()
+TMap<FString, float> UEmotionAI::RunInference()
 {
-    TArray<float> Output;
+    TMap<FString, float> Output;
 
     if (!InternalModel || !InternalModel->Session)
     {
@@ -248,7 +248,7 @@ TArray<float> UEmotionAI::RunInference()
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
         Api->ReleaseMemoryInfo(MemoryInfo);
         Api->ReleaseStatus(status);
         return Output;
@@ -293,7 +293,7 @@ TArray<float> UEmotionAI::RunInference()
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
         Api->ReleaseValue(InputTensor);
         Api->ReleaseMemoryInfo(MemoryInfo);
         Api->ReleaseStatus(status);
@@ -307,33 +307,36 @@ TArray<float> UEmotionAI::RunInference()
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
         Api->ReleaseValue(InputTensor);
         Api->ReleaseMemoryInfo(MemoryInfo);
         Api->ReleaseStatus(status);
         return Output;
     }
 
-    char* InputName = nullptr;
-    status = Api->SessionGetInputName(InternalModel->Session, 0, Alloc, &InputName);
+    char* InputTensorName = nullptr;
+    status = Api->SessionGetInputName(InternalModel->Session, 0, Alloc, &InputTensorName);
 
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
+        Api->AllocatorFree(Alloc, InputTensorName);
         Api->ReleaseValue(InputTensor);
         Api->ReleaseMemoryInfo(MemoryInfo);
         Api->ReleaseStatus(status);
         return Output;
     }
 
-    char* OutputName = nullptr;
-    status = Api->SessionGetOutputName(InternalModel->Session, 0, Alloc, &OutputName);
+    char* OutputTensorName = nullptr;
+    status = Api->SessionGetOutputName(InternalModel->Session, 0, Alloc, &OutputTensorName);
 
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
+        Api->AllocatorFree(Alloc, InputTensorName);
+        Api->AllocatorFree(Alloc, OutputTensorName);
         Api->ReleaseValue(InputTensor);
         Api->ReleaseMemoryInfo(MemoryInfo);
         Api->ReleaseStatus(status);
@@ -341,40 +344,39 @@ TArray<float> UEmotionAI::RunInference()
     }
 
     // Run
-    const char* InputNames[] = { InputName };
-    const char* OutputNames[] = { OutputName };
+    const char* InputTensorNames[] = { InputTensorName };
+    const char* OutputTensorNames[] = { OutputTensorName };
     OrtValue* OutputTensors[1] = { nullptr };
+
+    Api->AllocatorFree(Alloc, InputTensorName);
+    Api->AllocatorFree(Alloc, OutputTensorName);
 
     status = Api->Run(
         InternalModel->Session,
         nullptr,             // RunOptions
-        InputNames,
+        InputTensorNames,
         &InputTensor,
         1,                   // num_inputs
-        OutputNames,
+        OutputTensorNames,
         1,                   // num_outputs
         OutputTensors
     );
 
+    Api->ReleaseValue(InputTensor);
+
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
-        Api->ReleaseValue(InputTensor);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
         Api->ReleaseValue(OutputTensors[0]);
-        Api->AllocatorFree(Alloc, InputName);
-        Api->AllocatorFree(Alloc, OutputName);
         Api->ReleaseMemoryInfo(MemoryInfo);
         Api->ReleaseStatus(status);
         return Output;
     }
 
     if (OutputTensors[0] == NULL) {
-        UE_LOG(LogTemp, Error, TEXT("Output tensor es NULL\n"));
-        Api->ReleaseValue(InputTensor);
+        UE_LOG(LogTemp, Error, TEXT("Output tensor es NULL"));
         Api->ReleaseValue(OutputTensors[0]);
-        Api->AllocatorFree(Alloc, InputName);
-        Api->AllocatorFree(Alloc, OutputName);
         Api->ReleaseMemoryInfo(MemoryInfo);
         Api->ReleaseStatus(status);
         return Output;
@@ -382,34 +384,31 @@ TArray<float> UEmotionAI::RunInference()
 
     // Obtener datos de salida
     float* FloatArray = nullptr;
-    Output.Init(0, OutputSize);
 
     status = Api->GetTensorMutableData(OutputTensors[0], (void**)&FloatArray);
 
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
-        Api->ReleaseValue(InputTensor);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
         Api->ReleaseValue(OutputTensors[0]);
-        Api->AllocatorFree(Alloc, InputName);
-        Api->AllocatorFree(Alloc, OutputName);
         Api->ReleaseMemoryInfo(MemoryInfo);
         Api->ReleaseStatus(status);
         return Output;
     }
 
-    for (int i = 0; i < OutputSize; i++)
-    {
-        Output[i] = FloatArray[i];
+    if (OutputNames.Num() != OutputSize) {
+        UE_LOG(LogTemp, Error, TEXT("OutputSize error: output size es %d, se esperaba %d"), OutputSize, OutputNames.Num());
     }
 
+    for (int i = 0; i < OutputSize; i++)
+    {
+        Output.Add(OutputNames[i], FloatArray[i]);
+    }
+
+    Api->ReleaseValue(OutputTensors[0]);
 
     // Liberar memoria temporal
-    Api->ReleaseValue(InputTensor);
-    Api->ReleaseValue(OutputTensors[0]);
-    Api->AllocatorFree(Alloc, InputName);
-    Api->AllocatorFree(Alloc, OutputName);
     Api->ReleaseMemoryInfo(MemoryInfo);
     Api->ReleaseStatus(status);
 
@@ -462,7 +461,7 @@ void UEmotionAI::BeginPlay()
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
         Api->ReleaseTypeInfo(type_info);
         Api->ReleaseStatus(status);
         return;
@@ -473,7 +472,7 @@ void UEmotionAI::BeginPlay()
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
         Api->ReleaseTypeInfo(type_info);
         Api->ReleaseStatus(status);
         return;
@@ -483,7 +482,7 @@ void UEmotionAI::BeginPlay()
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
         Api->ReleaseTypeInfo(type_info);
         Api->ReleaseStatus(status);
         return;
@@ -507,7 +506,7 @@ void UEmotionAI::BeginPlay()
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
         Api->ReleaseTypeInfo(type_info);
         Api->ReleaseStatus(status);
         return;
@@ -517,7 +516,7 @@ void UEmotionAI::BeginPlay()
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
         Api->ReleaseTypeInfo(type_info);
         Api->ReleaseStatus(status);
         return;
@@ -528,7 +527,7 @@ void UEmotionAI::BeginPlay()
     if (status != NULL) {
         const char* errorMsg = Api->GetErrorMessage(status);
         FString UnrealError = UTF8_TO_TCHAR(errorMsg);
-        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s\n"), *UnrealError);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
         Api->ReleaseTypeInfo(type_info);
         Api->ReleaseStatus(status);
         return;
@@ -536,5 +535,56 @@ void UEmotionAI::BeginPlay()
 
     OutputSize = size;
 
+    // Allocator
+    OrtAllocator* Allocator = nullptr;
+    Api->GetAllocatorWithDefaultOptions(&Allocator);
+
+    // Metadata
+    OrtModelMetadata* Metadata = nullptr;
+    status = Api->SessionGetModelMetadata(
+        InternalModel->Session,
+        &Metadata
+    );
+
+    if (status != NULL) {
+        const char* errorMsg = Api->GetErrorMessage(status);
+        FString UnrealError = UTF8_TO_TCHAR(errorMsg);
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: %s"), *UnrealError);
+        Api->ReleaseTypeInfo(type_info);
+        Api->ReleaseStatus(status);
+        return;
+    }
+
     Api->ReleaseTypeInfo(type_info);
+
+    // Leer clave "output_names"
+    char* value = nullptr;
+
+    status = Api->ModelMetadataLookupCustomMetadataMap(
+        Metadata,
+        Allocator,
+        "output_names",
+        &value
+    );
+
+    if (status != NULL || value == nullptr) {
+        UE_LOG(LogTemp, Error, TEXT("Onnx run error: no se pudo leer output_names de los metadatos"));
+        Api->ReleaseStatus(status);
+        Api->AllocatorFree(Allocator, value);
+        Api->ReleaseModelMetadata(Metadata);
+        return;
+    }
+
+    FString NamesString = UTF8_TO_TCHAR(value);
+
+    // Separar por comas → TArray<FString>
+    NamesString.ParseIntoArray(OutputNames, TEXT(","), true);
+
+    for (const FString& Name : OutputNames)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Output: %s"), *Name);
+    }
+
+    Api->AllocatorFree(Allocator, value);
+    Api->ReleaseModelMetadata(Metadata);
 }

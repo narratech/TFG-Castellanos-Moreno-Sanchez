@@ -226,6 +226,8 @@ def evaluate(model, loader, device):
 # ============================================================
 # 📁 EXPORTAR A ONNX
 # ============================================================
+import onnx
+
 def export_to_onnx(model, dataset, device):
     model.eval()
     
@@ -255,6 +257,14 @@ def export_to_onnx(model, dataset, device):
             "output": {0: "batch_size"}
         }
     )
+
+    model_onnx = onnx.load(onnx_path)
+
+    meta = model_onnx.metadata_props.add()
+    meta.key = "output_names"
+    meta.value = ",".join(OUTPUT_COLUMNS)
+
+    onnx.save(model_onnx, onnx_path)
 
     print(f"✅ Modelo ONNX exportado en {onnx_path}")
 
