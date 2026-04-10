@@ -37,12 +37,12 @@ Abriremos el archivo config.ini y rellenaremos la sección Dataset.
 
 Podremos entrenar nuestro modelo haciendo uso de una autoencoder para aumentar el dataset o entrenarlo directamente. Ya hay una configuración por defecto para entrenar el autoencoder y el modelo pero se puede modificar en caso de que se quiera ajustar dentro de las secciones Autoencoder y GRU en config.ini.
 
-Si se quiere entrenar el modelo ejecutaremos gru_onehot.bat.
-Si se quiere entrenar el modelo aplicando antes el autoencoder ejecutaremos training.bat.
+Si se quiere entrenar el modelo ejecutaremos [gru_onehot.bat](#gru).
+Si se quiere entrenar el modelo aplicando antes el autoencoder ejecutaremos [training.bat](training).
 
 En ambos casos también aplicará onehot a las entradas en las columnas categóricas.
 
-Si, además, se quiere comprobar el entrenamiento con nuevos datos de prueba. Añadir dichos datos en un archivo realset.csv dentro de la carpeta dataset y ejecutar testeo.bat después de haber generado el modelo.
+Si, además, se quiere comprobar el entrenamiento con nuevos datos de prueba. Añadir dichos datos en un archivo realset.csv dentro de la carpeta dataset y ejecutar [testeo.bat](testeo) después de haber generado el modelo.
 A continuación, con el modelo ya dentro de la carpeta models pasaremos a unreal engine
 
 ---
@@ -71,17 +71,17 @@ En este componente tendremos que rellenar algunos campos dentro del editor.
 
 Pondremos dentro del campo Model Path la ruta de nuestro modelo y el numbre del archivo partiendo como raíz la carpeta Content de nuestro proyecto de unreal.
 
-[Imagen]
+![Config](Imagenes/Guia_UE_1.png)
 
 Una vez configurado el componente puedes hacer inferencias con el modelo entrenado con el nodo Run Inference dentro del Event Graph.
 
 Requerirá como parámetro un vector de floats con todos los parámetros de la nueva entrada. La salida será un vector de floats con las salidas en el mismo orden que se puso en el archivo config.ini en el parámetro OUTPUT_NAMES.
 
-[Imagen]
+![Codigo1](Imagenes/Guia_UE_5.png)
 
 Para convertir valores categóricos, se puede usar el nodo One Hot Encode with Categories. Que tendrá como parámetros el string a codificar y un array de strings con todos los posibles valores que puede tener el valor.
 
-[Imagen]
+![Codigo2](Imagenes/Guia_UE_4.png)
 
 El formato esperado del parámetro de Run Inference tendrá primero todos los valores discretos y luego todos los categóricos según el orden en el que aparecen en el dataset con el que entrenó.
 Ej:
@@ -165,6 +165,7 @@ Dentro del archivo config.ini hay varios elementos que el desarrollador puede mo
   *	USE_CUDA: Indica si usara la GPU (True) o la CPU (False).
 
 **TRAINING.BAT**  
+<a name="training"></a>
 Genera casos de prueba sintéticos a partir del dataset proporcionado en la carpeta dataset. Se aplica de manera automática one-hot sobre las columnas de entrada categoricas
 
 Los datos sintéticos se guardaran en la misma carpeta con el nombre de “generated_{nombre del archivo dataset}”.
@@ -174,12 +175,14 @@ Al terminar de generar los nuevos datos mostrará por pantalla la distribución 
 También aplicará el entrenamiento del modelo GRU con los datos generados por el autoencoder y exportará en la carpeta models lo necesario para exportar tu modelo a Unreal Engine (gru_model.onnx y gru_model.onnx.data) y un archivo gru_model.pth para poder realizar testeos.
 
 **GRU_ONEHOT.BAT**  
+<a name="gru"></a>
 Entrena el modelo dentro de dataset aplicando one-hot a las columnas de entrada categóricas.
 
 Al finalizar el entrenamiento, por consola se dará información sobre las matrices de confusión de las salidas y la precisión del modelo respecto al dataset.
 
 
 **TESTEO.BAT**  
+<a name="testeo"></a>
 Comprueba tu modelo gru_model.pth ya exportado en la carpeta models con un dataset nuevo dentro de la carpeta dataset.
 
 Al terminar las predicciones se mostrará por pantalla la correlación entre las salidas del dataset y las predichas por el modelo ya entrenado.
