@@ -68,7 +68,7 @@ La herramienta proporciona un actor preconfigurado listo para usar.
 ## **2.3 Configuración del Cerebro (Comoponente EmotionAI)**  
 <a name="23-componente"></a>
 Ahora dotaremos al NPC de la capacidad de procesar las emociones.
-A continuación, añadiremos a nuestro NPC el componente EmocionIA. Ubicado en source del proyecto de Unreal.
+A continuación, añadiremos a nuestro NPC el componente EmocionIA, el cuál se aplicara al blueprint y NO como instancia. Ubicado en source del proyecto de Unreal.
 En este componente tendremos que rellenar algunos campos dentro del editor.
 
 Pondremos dentro del campo Model Path la ruta de nuestro modelo y el numbre del archivo partiendo como raíz la carpeta Content de nuestro proyecto de unreal.
