@@ -1,195 +1,194 @@
-# **GUIA DE USUARIO HERRAMIENTA**
+# GUÍA DE USUARIO
+> **Documentación Técnica Integrada**
+> Guía completa para el entrenamiento del modelo GRU de emociones y su posterior integración mediante plugin en Unreal Engine.
 
 ---
 
-# **Índice**
-1. [**Entrenamiento del modelo GRU de emociones**](#1-GRU)  
-   1.1 [Instalación](#11-instalacion)  
-   1.2 [Instrucciones](#12-instrucciones)  
-   
-2. [**Guía de instalación plugin**](#2-plugin)  
-   2.1 [Preparación del entorno y navegación](#21-entorno)  
-   2.2 [El personaje base (NPC)](#22-NPC)  
-   2.3 [Configuración del Cerebro (Comoponente EmotionAI)](#23-componente)  
-   2.4 [Conexión con el sistema de animación](#24-sistema)  
-   2.5 [Generación de acciones en el entorno](#25-acciones)  
-   2.6 [Reacciones y árboles de estado (StateTrees)](#26-statetrees)  
-   
-5. [**Ampliación de información**](#3-info)
+## Índice de Contenidos
+
+1. [**Entrenamiento del modelo GRU de emociones**](#1-entrenamiento-del-modelo-gru-de-emociones)
+   * 1.1 [Requisitos e Instalación](#11-requisitos-e-instalación)
+   * 1.2 [Instrucciones de Uso](#12-instrucciones-de-uso)
+2. [**Guía de instalación del Plugin en Unreal Engine**](#2-guía-de-instalación-del-plugin-en-unreal-engine)
+   * 2.1 [Preparación del entorno y navegación](#21-preparación-del-entorno-y-navegación)
+   * 2.2 [El personaje base (NPC)](#22-el-personaje-base-npc)
+   * 2.3 [Configuración del Cerebro (Componente EmotionAI)](#23-configuración-del-cerebro-componente-emotionai)
+   * 2.4 [Conexión con el sistema de animación](#24-conexión-con-el-sistema-de-animación)
+   * 2.5 [Generación de acciones en el entorno](#25-generación-de-acciones-en-el-entorno)
+   * 2.6 [Reacciones y árboles de estado (StateTrees)](#26-reacciones-y-árboles-de-estado-statetrees)
+3. [**Ampliación de Información y Referencia Técnica**](#3-ampliación-de-información-y-referencia-técnica)
+   * 3.1 [Configuración de parámetros (`config.ini`)](#31-configuración-de-parámetros-configini)
+   * 3.2 [Referencia de Scripts de Ejecución](#32-referencia-de-scripts-de-ejecución)
 
 ---
+
 <div style="page-break-before: always;"></div>
 
-# **1. Entrenamiento del modelo GRU de emociones**  
-<a name="1-GRU"></a>
+# 1. Entrenamiento del modelo GRU de emociones <a name="1-entrenamiento-del-modelo-gru-de-emociones"></a>
 
-## **1.1 Instalación**  
-<a name="11-instalacion"></a>
-Es necesario tener instalado [Python](https://www.python.org/downloads/release/python-3144/).
-  1. Descargar el comprimido de GitHub y extraerlo en una carpeta vacía.
-  2. Accede a la ruta TFG-Castellanos-Sanchez\GRU y ejecuta el archivo import_dependencies.bat para generar el entorno virtual en la carpeta venv.
-  3. Copiar tu dataset en formato csv separado con comas dentro de la carpeta dataset.
+## 1.1 Requisitos e Instalación <a name="11-requisitos-e-instalación"></a>
 
-## **1.2 Instrucciones**  
-<a name="12-instrucciones"></a>
-Una vez instalado y generado el entorno de python en la carpeta venv. 
-Permanenciendo en la ruta Castellanos-Moreno-Sanchez\GRU, abriremos el archivo config.ini y rellenaremos la sección Dataset.
+Para inicializar el entorno de entrenamiento, es requisito indispensable tener instalado [Python](https://www.python.org/downloads/release/python-3144/).
 
-Podremos entrenar nuestro modelo haciendo uso de una autoencoder para aumentar el dataset o entrenarlo directamente. Ya hay una configuración por defecto para entrenar el autoencoder y el modelo pero se puede modificar en caso de que se quiera ajustar dentro de las secciones Autoencoder y GRU en config.ini.
+**Pasos de instalación:**
+1. Descargar el archivo comprimido del repositorio de GitHub y extraer su contenido en un directorio vacío.
+2. Navegar a la ruta `TFG-Castellanos-Sanchez\GRU` y ejecutar el script `import_dependencies.bat`. Este proceso generará automáticamente un entorno virtual dentro de la carpeta `venv`.
+3. Copiar el dataset (en formato `.csv` delimitado por comas) dentro del directorio `dataset`.
 
-Si se quiere entrenar el modelo ejecutaremos [gru_only.bat](#gru).
-Si se quiere entrenar el modelo aplicando antes el autoencoder ejecutaremos [training.bat](training).
+## 1.2 Instrucciones de Uso <a name="12-instrucciones-de-uso"></a>
 
-En ambos casos también aplicará onehot a las entradas en las columnas categóricas.
+Una vez completada la instalación y generado el entorno virtual, proceda con los siguientes pasos desde el directorio `Castellanos-Moreno-Sanchez\GRU`:
 
-Si, además, se quiere comprobar el entrenamiento con nuevos datos de prueba. Añadir dichos datos en un archivo realset.csv dentro de la carpeta dataset y ejecutar [testeo.bat](testeo) después de haber generado el modelo.
-A continuación, con el modelo ya dentro de la carpeta models pasaremos a unreal engine
+1. Abra el archivo de configuración `config.ini`.
+2. Cumplimente los datos requeridos en la sección **`[Dataset]`**.
 
----
+El sistema permite dos modalidades de entrenamiento:
+* **Entrenamiento Directo:** Ejecutando `gru_only.bat`.
+* **Entrenamiento con Autoencoder (Aumento de datos):** Ejecutando `training.bat`. *(Existe una configuración por defecto en las secciones `[Autoencoder]` y `[GRU]` del `config.ini` que puede ser modificada según las necesidades del proyecto).*
 
-# **2. Guía de instalación plugin**  
-<a name="2-plugin"></a>
-Guardaremos el modelo generado dentro de la carpeta Content de nuestro proyecto de Unreal.
+> **Nota:** En ambas modalidades, el sistema aplicará automáticamente la codificación *One-Hot* a las entradas correspondientes a las columnas categóricas.
 
-## **2.1 Preparación del entorno y navegación**  
-<a name="21-entorno"></a>
-Para que la IA funcione correctamente, el entorno debe estar adaptado a las acciones con las que fue entrenada.
-*	Crea un nivel nuevo o utiliza un entorno existente. Como punto de partida, la herramienta incluye un nivel de ejemplo ya preconfigurado llamado Demo2, situado en Content/TFG-Castellanos-Sanchez/Levels
-*	Fundamental para el movimiento: Para que el NPC pueda desplazarse (patrullar, huir, etc.), es obligatorio añadir un volumen de navegación a la escena. Busca en el panel de Place Actors el elemento NavMesh Bounds Volume, arrástralo a tu nivel y escala el volumen para que cubra todo el suelo.
-
-## **2.2 El personaje base (NPC)**  
-<a name="22-NPC"></a>
-La herramienta proporciona un actor preconfigurado listo para usar.
-*	Navega a la ruta Content/TFG_CastellanosSanchez/Blueprints/Npc y arrastra al nivel el actor llamado DemoSandBoxCharacter_Mover.
-*	Nota sobre personalización: Este actor viene por defecto con un MetaHuman y componentes de ejemplo asignados. Su propósito es servir como plantilla base. El usuario puede (y debe) personalizarlo vaciando las acciones predeterminadas e insertando su propio MetaHuman (modificando el Skeletal Mesh en el VisualOverride) para adaptarlo a las necesidades estéticas de su proyecto.
-   - Para crear tu propio metahuman sigue los pasos del siguiente video acerca de [Metahuman Creator](https://youtu.be/2M22x-Jm4WE). La otra opción es usar alguno de los que vienen en el zip del Content que te tuviste que descargar. 
-   - Una vez creado el metahuman, accederás al componente Visual Override del actor DemoSandBoxCharacter_Mover, buscarás el parametro de Child Actor y agregarás el blueprint del metahuman que creaste. 
-
-## **2.3 Configuración del Cerebro (Comoponente EmotionAI)**  
-<a name="23-componente"></a>
-Ahora dotaremos al NPC de la capacidad de procesar las emociones.
-A continuación, añadiremos a nuestro NPC el componente EmocionIA, el cuál se aplicara al blueprint y NO como instancia. Ubicado en source del proyecto de Unreal.
-En este componente tendremos que rellenar algunos campos dentro del editor.
-
-Pondremos dentro del campo Model Path la ruta de nuestro modelo y el numbre del archivo partiendo como raíz la carpeta Content de nuestro proyecto de unreal.
-
-![Config](Imagenes/Guia_UE_1.png)
-
-Antes de pasar a la siguiente parte queremos que sepas que hay un Actor Blueprint de los siguientes pasos donde ya hay una configuración acerca de un ejemplo ya montado para que te sirva de ayuda, el cuál, se encuentra en Content/TFG-Castellanos-Sanchez/IA, y se llama Test_EmotionIA. Por lo tanto, una vez configurado el componente puedes hacer inferencias con el modelo entrenado con el nodo Run Inference dentro del Event Graph.
-
-Requerirá como parámetro un vector de floats con todos los parámetros de la nueva entrada. La salida será un vector de floats con las salidas en el mismo orden que se puso en el archivo config.ini en el parámetro OUTPUT_NAMES.
-
-![Codigo1](Imagenes/Guia_UE_5.png)
-
-Para convertir valores categóricos, se puede usar el nodo One Hot Encode with Categories. Que tendrá como parámetros el string a codificar y un array de strings con todos los posibles valores que puede tener el valor.
-
-![Codigo2](Imagenes/Guia_UE_4.png)
-
-El formato esperado del parámetro de Run Inference tendrá primero todos los valores discretos y luego todos los categóricos según el orden en el que aparecen en el dataset con el que entrenó.
-Ej:
-(Dataset) DiscretoA, DiscretoB, CategoricoA, DiscretoC, CategoricoB -> (Run Inference) DiscretoA, DiscretoB, DiscretoC, CategoricoA_1, …,  CategoricoA_X, CategoricoB_1, …, CategoricoB_X.
-
-## **2.4 Conexión con el sistema de animación**  
-<a name="24-sistema"></a>
-
-Para que las emociones calculadas por la IA deformen físicamente al personaje, necesitamos el gestor de animación.
-*	Navega a la ruta Content/TFG_CastellanosSanchez/Blueprints/ExpresionFacial y arrastra al nivel el actor BP_AnimationSystem.
-*	Selecciona el BP_AnimationSystem en tu nivel y, en el panel de Detalles, localiza la variable Metahuman Actor. Asígnale usando el cuentagotas el NPC (DemoSandBoxCharacter_Mover) que pusiste en el Paso 2.
-*	Activa la casilla de la variable Use Emotion. Esto habilitará la comunicación en tiempo real para que los cambios emocionales se reflejen físicamente en el NPC.
-*	Para terminar de conectar el modelo con el sistema de animación, accederemos al componente al blueprint o parte del código creado en el paso 2.3, y tendremos que enviar el mapa de emociones que saca el modelo al actor de BP_AnimationSystem. Para ello podemos hacer algo parecido a la siguiente imagen:
-
-![Codigo3](Imagenes/SetEmotions.png)
-
-Donde Animation Actor es una variable de tipo actor que hace referencia al BP_AnimationSystem. 
-
-## **2.5 Generación de acciones en el entorno**  
-<a name="25-acciones"></a>
-
-El comportamiento de la IA depende de los estímulos externos.
-*	El usuario debe programar en su nivel las acciones y eventos (variables de entorno) coherentes con el dataset con el que entrenó a la IA.
-*	Nuestra demo incluye ejemplos de interacción ya configurados que alteran estos estados, tales como la aparición de lluvia o la acción del jugador de equipar un arma e intentar golpear al NPC.
-
-## **2.6 Reacciones y árboles de estado (StateTrees)**  
-<a name="26-statetrees"></a>
-
-Finalmente, el NPC debe traducir esas emociones en comportamientos de IA.
-*	Asegúrate de que tu NPC está poseído por el controlador de IA proporcionado: AIC_NPC_Demo.
-*	A este controlador se le debe pasar por parámetro un State Tree (Árbol de Estados), que el usuario diseñará para dictar cómo reacciona el NPC ante las diferentes acciones del entorno. Para este paso también proporcionamos un ejemplo de uso de un State Tree que puedes encontrar en Content/TFG_CastellanosSanchez/Blueprints/AI/StateTree llamado ST_NPC_Principal
-*	Plantilla disponible: Proporcionamos un State Tree a modo de plantilla que incluye estados lógicos fundamentales (Sentirse amenazado, Caminar, Correr). Recomendamos a los usuarios utilizar este árbol como un Linked Asset (Sub-árbol) dentro de sus propios State Trees principales para agilizar el desarrollo de reacciones complejas.
+### Pruebas y Validación (Testeo)
+Si desea validar el entrenamiento con nuevos datos empíricos:
+1. Añada los nuevos datos en un archivo llamado `realset.csv` dentro del directorio `dataset`.
+2. Ejecute el script `testeo.bat` (requiere haber generado previamente el modelo).
+3. Tras la validación, el modelo generado se ubicará en la carpeta `models`, quedando listo para su integración en Unreal Engine.
 
 ---
 
-# **3. Ampliación de información**   
-<a name="3-info"></a>
-Dentro del archivo config.ini hay varios elementos que el desarrollador puede modificar para ajustar el modelo:
+# 2. Guía de instalación del Plugin en Unreal Engine <a name="2-guía-de-instalación-del-plugin-en-unreal-engine"></a>
 
-**Dataset (obligatorio):**  
-  *	CSV_NAME: nombre del archivo csv con el dataset para entrenar el modelo.
+**Paso previo:** Copie el modelo generado (ubicado en la carpeta `models`) dentro del directorio `Content` de su proyecto de Unreal Engine.
 
-  *	TESTER_CSV_NAME: nombre del archivo csv con el dataset para comprobar el modelo (se recomienda que los datos sean distintos a los de CSV_NAME).
+## 2.1 Preparación del entorno y navegación <a name="21-preparación-del-entorno-y-navegación"></a>
 
-  *	OUTPUT_NAMES: nombre de las columnas con las emociones que se quiere que el modelo prediga.
+Para garantizar el correcto funcionamiento de la Inteligencia Artificial, el entorno debe soportar las acciones parametrizadas durante el entrenamiento.
 
-  *	SEQUENCE_LENGTH: longitud de la secuenca de entradas con la que el modelo GRU va a ser entrenado.
+* **Nivel de trabajo:** Puede crear un nivel nuevo o utilizar uno existente. La herramienta incluye un nivel preconfigurado de prueba: `Demo2`, localizado en `Content/TFG-Castellanos-Sanchez/Levels`.
+* **Volumen de Navegación:** Es estrictamente necesario añadir un volumen de navegación para permitir el desplazamiento del NPC (patrullaje, huida, etc.). Desde el panel *Place Actors*, arrastre un `NavMesh Bounds Volume` a la escena y escálelo hasta cubrir toda la superficie transitable.
 
-  *	BLOCK_SIZE: Tamaño de las entradas contiguas dentro del dataset.
+## 2.2 El personaje base (NPC) <a name="22-el-personaje-base-npc"></a>
 
-[Imagen]
+Se proporciona un actor preconfigurado (`DemoSandBoxCharacter_Mover`) ubicado en `Content/TFG_CastellanosSanchez/Blueprints/Npc`. Arrástrelo al nivel.
 
-**Autoencoder:**  
-  *	N_SYNTHETIC: Número de secuencias sintéticas a generar por el autoencoder.
+> **Personalización del NPC (MetaHuman)**
+> Por defecto, el actor integra un MetaHuman y componentes de prueba. Debe personalizarlo asignando su propio MetaHuman modificando el *Skeletal Mesh* en el componente `VisualOverride`.
+> 1. Para crear un modelo personalizado, consulte el [Video tutorial de MetaHuman Creator](https://youtu.be/2M22x-Jm4WE) (o utilice los modelos incluidos en el `.zip` de la carpeta Content).
+> 2. Acceda al componente `Visual Override` del actor, localice el parámetro `Child Actor` y asigne el Blueprint de su MetaHuman.
 
-  *	EPOCHS: Número iteraciones que hará durante el entrenamiento del autoencoder.
+## 2.3 Configuración del Cerebro (Componente EmotionAI) <a name="23-configuración-del-cerebro-componente-emotionai"></a>
 
-  *	LATENT_SIZE: Tamaño de las capas latentes del autoencoder.
+Para dotar al NPC de procesamiento emocional, añada el componente **`EmotionIA`** al Blueprint del personaje (ubicado en el `source` del proyecto). *Importante: Aplíquelo en el Blueprint, no como instancia en el nivel.*
 
-  *	HIDDEN_SIZE: Tamaño de las capas ocultas del autoencoder
+En el panel de detalles del componente:
+* Defina en **`Model Path`** la ruta y nombre del archivo de su modelo, utilizando la carpeta `Content` como raíz.
 
-  *	HIDDEN_NUM: Número de capas ocultas del autoencoder
+![Configuración del Modelo](Imagenes/Guia_UE_1.png)
 
-  *	LEARNING_RATE: Tasa de aprendizaje del autoencoder.
+### Inferencias desde Blueprints
+Dispone de un Actor Blueprint de ejemplo ya configurado en `Content/TFG-Castellanos-Sanchez/IA` llamado `Test_EmotionIA`. 
+Utilice el nodo **`Run Inference`** dentro del Event Graph para realizar predicciones.
 
-  *	BETA_VAE: valor de beta que usa el autoencoder.
+* **Entrada:** Un vector de floats (`Array<float>`) con los parámetros de entrada.
+* **Salida:** Un vector de floats ordenado según el parámetro `OUTPUT_NAMES` del `config.ini`.
 
-  *	BATCH_SIZE: Tamaño del batch del autoencoder.
+![Nodo Run Inference](Imagenes/Guia_UE_5.png)
 
-  *	USE_CUDA: Indica si usara la GPU (True) o la CPU (False).
+Para la conversión de valores categóricos, utilice el nodo **`One Hot Encode with Categories`** pasando como parámetros el *string* a codificar y un array con los valores posibles.
 
-**GRU:**  
-  *	EPOCHS: Número iteraciones que hará durante el entrenamiento del GRU.
+![Nodo One Hot Encode](Imagenes/Guia_UE_4.png)
 
-  *	HIDDEN_SIZE: Tamaño de las capas ocultas del modelo GRU
+> **Formato de los datos para la Inferencia:**
+> El vector debe contener primero los valores continuos/discretos y posteriormente los categóricos, respetando el orden del dataset.
+> *Ejemplo:* > `[DiscretoA, DiscretoB, CategoricoA, DiscretoC, CategoricoB]` **➜** `[DiscretoA, DiscretoB, DiscretoC, CategoricoA_1...CategoricoA_X, CategoricoB_1...CategoricoB_X]`
 
-  *	NUM_LAYERS: Número de capas ocultas del GRU.
+## 2.4 Conexión con el sistema de animación <a name="24-conexión-con-el-sistema-de-animación"></a>
 
-  *	BATCH_SIZE: Tamaño del batch del modelo GRU.
+Para reflejar físicamente las emociones procesadas:
 
-  *	LEARNING_RATE: Tasa de aprendizaje del GRU.
+1. Navegue a `Content/TFG_CastellanosSanchez/Blueprints/ExpresionFacial` e inserte el actor **`BP_AnimationSystem`** en el nivel.
+2. Seleccione el actor, busque la variable **`Metahuman Actor`** en Detalles y asigne el NPC creado en el paso 2.2 mediante el cuentagotas.
+3. Active la variable **`Use Emotion`** para habilitar la deformación facial en tiempo real.
+4. Envíe el mapa de emociones (salida del nodo `Run Inference` del paso 2.3) al actor `BP_AnimationSystem`. A continuación se muestra un ejemplo de implementación:
 
-  *	ACCURACY_THRESHOLD: Rango para dar por valido los valores de la salida
+![Set Emotions](Imagenes/SetEmotions.png)
+*(Donde `Animation Actor` es una referencia a la instancia de `BP_AnimationSystem`)*.
 
-  *	USE_CUDA: Indica si usara la GPU (True) o la CPU (False).
+## 2.5 Generación de acciones en el entorno <a name="25-generación-de-acciones-en-el-entorno"></a>
 
-**TRAINING.BAT**  
-<a name="training"></a>
-Genera casos de prueba sintéticos a partir del dataset proporcionado en la carpeta dataset. Se aplica de manera automática one-hot sobre las columnas de entrada categoricas
+La IA reacciona dinámicamente a los estímulos. Es responsabilidad del desarrollador programar las variables de entorno en el nivel para que sean coherentes con el dataset de entrenamiento.
+*La demo incluida contiene ejemplos preconfigurados como precipitaciones (lluvia) o eventos de amenaza (jugador equipando un arma).*
 
-Los datos sintéticos se guardaran en la misma carpeta con el nombre de “generated_{nombre del archivo dataset}”.
+## 2.6 Reacciones y árboles de estado (StateTrees) <a name="26-reacciones-y-árboles-de-estado-statetrees"></a>
 
-Al terminar de generar los nuevos datos mostrará por pantalla la distribución de estos en formato de gráfico de puntos.
+La traducción de emociones a comportamientos requiere el uso de StateTrees:
 
-También aplicará el entrenamiento del modelo GRU con los datos generados por el autoencoder y exportará en la carpeta models lo necesario para exportar tu modelo a Unreal Engine (gru_model.onnx y gru_model.onnx.data) y un archivo gru_model.pth para poder realizar testeos.
+1. Verifique que el NPC está poseído por el controlador de IA designado: **`AIC_NPC_Demo`**.
+2. Asigne un **State Tree** por parámetro a este controlador. Dispone de un ejemplo funcional en `Content/TFG_CastellanosSanchez/Blueprints/AI/StateTree` llamado `ST_NPC_Principal`.
 
-**GRU_ONEHOT.BAT**  
-<a name="gru"></a>
-Entrena el modelo dentro de dataset aplicando one-hot a las columnas de entrada categóricas.
+> **Recomendación de Diseño:** Utilice el árbol base proporcionado (que incluye estados lógicos como *Sentirse amenazado, Caminar, Correr*) como **Linked Asset** dentro de sus propios StateTrees personalizados para optimizar tiempos de desarrollo.
 
-Al finalizar el entrenamiento, por consola se dará información sobre las matrices de confusión de las salidas y la precisión del modelo respecto al dataset.
+---
 
+# 3. Ampliación de Información y Referencia Técnica <a name="3-ampliación-de-información-y-referencia-técnica"></a>
 
-**TESTEO.BAT**  
-<a name="testeo"></a>
-Comprueba tu modelo gru_model.pth ya exportado en la carpeta models con un dataset nuevo dentro de la carpeta dataset.
+A continuación se detalla la documentación técnica avanzada sobre los parámetros de configuración y los scripts ejecutables.
 
-Al terminar las predicciones se mostrará por pantalla la correlación entre las salidas del dataset y las predichas por el modelo ya entrenado.
+## 3.1 Configuración de parámetros (`config.ini`) <a name="31-configuración-de-parámetros-configini"></a>
 
+### Bloque `[Dataset]` (Obligatorio)
+| Parámetro | Descripción |
+| :--- | :--- |
+| **`CSV_NAME`** | Nombre del archivo CSV que contiene el dataset de entrenamiento. |
+| **`TESTER_CSV_NAME`** | Nombre del archivo CSV para validación (se recomiendan datos independientes). |
+| **`OUTPUT_NAMES`** | Nombre de las columnas objetivo (emociones que el modelo debe predecir). |
+| **`SEQUENCE_LENGTH`** | Longitud de la secuencia de entradas para el entrenamiento del GRU. |
+| **`BLOCK_SIZE`** | Tamaño de las entradas contiguas dentro del dataset. |
+
+![Ref](Imagenes/Guia_1.png)
+
+### Bloque `[Autoencoder]`
+| Parámetro | Descripción |
+| :--- | :--- |
+| **`N_SYNTHETIC`** | Número de secuencias sintéticas generadas por el autoencoder. |
+| **`EPOCHS`** | Iteraciones totales para el entrenamiento del autoencoder. |
+| **`LATENT_SIZE`** | Dimensión del espacio latente. |
+| **`HIDDEN_SIZE`** | Tamaño de las capas ocultas. |
+| **`HIDDEN_NUM`** | Cantidad de capas ocultas en la arquitectura. |
+| **`LEARNING_RATE`** | Tasa de aprendizaje (Learning rate). |
+| **`BETA_VAE`** | Valor del parámetro beta utilizado en la función de pérdida. |
+| **`BATCH_SIZE`** | Tamaño del lote (Batch) de procesamiento. |
+| **`USE_CUDA`** | *True* para cálculo en GPU (Recomendado) o *False* para CPU. |
+
+### Bloque `[GRU]`
+| Parámetro | Descripción |
+| :--- | :--- |
+| **`EPOCHS`** | Iteraciones totales para el entrenamiento del modelo GRU. |
+| **`HIDDEN_SIZE`** | Tamaño de las capas ocultas del modelo. |
+| **`NUM_LAYERS`** | Número total de capas ocultas. |
+| **`BATCH_SIZE`** | Tamaño del lote (Batch) de procesamiento. |
+| **`LEARNING_RATE`** | Tasa de aprendizaje (Learning rate). |
+| **`ACCURACY_THRESHOLD`**| Rango de tolerancia para considerar válida una salida. |
+| **`USE_CUDA`** | *True* para cálculo en GPU o *False* para CPU. |
+
+<br>
+
+## 3.2 Referencia de Scripts de Ejecución <a name="32-referencia-de-scripts-de-ejecución"></a>
+
+### `training.bat`
+Script principal de pipeline para generación de datos y entrenamiento:
+* Genera casos de prueba sintéticos a partir del dataset original.
+* Aplica codificación *One-Hot* automáticamente a las columnas categóricas.
+* Almacena los datos sintéticos como `generated_{nombre_dataset}`.
+* Muestra un gráfico de dispersión en consola con la distribución de los nuevos datos.
+* Entrena el modelo GRU y exporta los archivos necesarios para Unreal Engine (`gru_model.onnx` y `gru_model.onnx.data`) y un archivo `gru_model.pth` para testeos locales.
+
+### `gru_only.bat`
+Script para entrenamiento directo:
+* Entrena el modelo utilizando exclusivamente los datos del dataset configurado, aplicando codificación *One-Hot*.
+* Muestra por consola las matrices de confusión resultantes y el porcentaje de precisión (*Accuracy*) final del modelo.
+
+### `testeo.bat`
+Script de validación y auditoría:
+* Carga el modelo `gru_model.pth` de la carpeta `models` y realiza predicciones usando el dataset de prueba indicado.
+* Imprime por pantalla un análisis de correlación matemática entre las salidas reales del dataset de prueba y las inferidas por el modelo.
