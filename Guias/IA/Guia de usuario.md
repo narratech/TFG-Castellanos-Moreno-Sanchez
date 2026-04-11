@@ -25,19 +25,19 @@
 
 ## **1.1 Instalación**  
 <a name="11-instalacion"></a>
-Es necesario tener instalado Python.
+Es necesario tener instalado [Python](https://www.python.org/downloads/release/python-3144/).
   1. Descargar el comprimido de GitHub y extraerlo en una carpeta vacía.
-  2. Ejecutar el archivo import_dependencies.bat para generar el entorno virtual en la carpeta venv.
+  2. Accede a la ruta TFG-Castellanos-Sanchez\GRU y ejecuta el archivo import_dependencies.bat para generar el entorno virtual en la carpeta venv.
   3. Copiar tu dataset en formato csv separado con comas dentro de la carpeta dataset.
 
 ## **1.2 Instrucciones**  
 <a name="12-instrucciones"></a>
-Una vez instalado y generado el entorno de python en la carpeta venv.
-Abriremos el archivo config.ini y rellenaremos la sección Dataset.
+Una vez instalado y generado el entorno de python en la carpeta venv. 
+Permanenciendo en la ruta Castellanos-Moreno-Sanchez\GRU, abriremos el archivo config.ini y rellenaremos la sección Dataset.
 
 Podremos entrenar nuestro modelo haciendo uso de una autoencoder para aumentar el dataset o entrenarlo directamente. Ya hay una configuración por defecto para entrenar el autoencoder y el modelo pero se puede modificar en caso de que se quiera ajustar dentro de las secciones Autoencoder y GRU en config.ini.
 
-Si se quiere entrenar el modelo ejecutaremos [gru_onehot.bat](#gru).
+Si se quiere entrenar el modelo ejecutaremos [gru_only.bat](#gru).
 Si se quiere entrenar el modelo aplicando antes el autoencoder ejecutaremos [training.bat](training).
 
 En ambos casos también aplicará onehot a las entradas en las columnas categóricas.
@@ -49,31 +49,33 @@ A continuación, con el modelo ya dentro de la carpeta models pasaremos a unreal
 
 # **2. Guía de instalación plugin**  
 <a name="2-plugin"></a>
-Guardaremos el modelo generado dentro de Content de nuestro proyecto de Unreal.
+Guardaremos el modelo generado dentro de la carpeta Content de nuestro proyecto de Unreal.
 
 ## **2.1 Preparación del entorno y navegación**  
 <a name="21-entorno"></a>
 Para que la IA funcione correctamente, el entorno debe estar adaptado a las acciones con las que fue entrenada.
-*	Crea un nivel nuevo o utiliza un entorno existente. Como punto de partida, la herramienta in-cluye un nivel de ejemplo ya preconfigurado llamado Demo2.
-*	Fundamental para el movimiento: Para que el NPC pueda desplazarse (patrullar, huir, etc.), es obligatorio añadir un volumen de navegación a la escena. Busca en el panel de Place Ac-tors los elementos NavMesh Bounds Volume y RecastNavMesh, arrástralos a tu nivel y esca-la el volumen para que cubra todo el suelo. (Consejo: Pulsa la tecla 'P' en el visor para visua-lizar la malla de navegación en color verde).
+*	Crea un nivel nuevo o utiliza un entorno existente. Como punto de partida, la herramienta incluye un nivel de ejemplo ya preconfigurado llamado Demo2, situado en Content/TFG-Castellanos-Sanchez/Levels
+*	Fundamental para el movimiento: Para que el NPC pueda desplazarse (patrullar, huir, etc.), es obligatorio añadir un volumen de navegación a la escena. Busca en el panel de Place Actors el elemento NavMesh Bounds Volume, arrástralo a tu nivel y escala el volumen para que cubra todo el suelo.
 
 ## **2.2 El personaje base (NPC)**  
 <a name="22-NPC"></a>
 La herramienta proporciona un actor preconfigurado listo para usar.
 *	Navega a la ruta Content/TFG_CastellanosSanchez/Blueprints/Npc y arrastra al nivel el actor llamado DemoSandBoxCharacter_Mover.
-*	Nota sobre personalización: Este actor viene por defecto con un MetaHuman y componentes de ejemplo asignados. Su propósito es servir como plantilla base. El usuario puede (y debe) personalizarlo vaciando las acciones predeterminadas e insertando su propio MetaHuman (modificando el Skeletal Mesh en el VisualOverride) para adaptarlo a las necesidades estéti-cas de su proyecto.
+*	Nota sobre personalización: Este actor viene por defecto con un MetaHuman y componentes de ejemplo asignados. Su propósito es servir como plantilla base. El usuario puede (y debe) personalizarlo vaciando las acciones predeterminadas e insertando su propio MetaHuman (modificando el Skeletal Mesh en el VisualOverride) para adaptarlo a las necesidades estéticas de su proyecto.
+   - Para crear tu propio metahuman sigue los pasos del siguiente video acerca de [Metahuman Creator](https://youtu.be/2M22x-Jm4WE). La otra opción es usar alguno de los que vienen en el zip del Content que te tuviste que descargar. 
+   - Una vez creado el metahuman, accederás al componente Visual Override del actor DemoSandBoxCharacter_Mover, buscarás el parametro de Child Actor y agregarás el blueprint del metahuman que creaste. 
 
 ## **2.3 Configuración del Cerebro (Comoponente EmotionAI)**  
 <a name="23-componente"></a>
 Ahora dotaremos al NPC de la capacidad de procesar las emociones.
-A continuación, añadiremos a nuestro NPC el componente EmocionIA.
+A continuación, añadiremos a nuestro NPC el componente EmocionIA. Ubicado en source del proyecto de Unreal.
 En este componente tendremos que rellenar algunos campos dentro del editor.
 
 Pondremos dentro del campo Model Path la ruta de nuestro modelo y el numbre del archivo partiendo como raíz la carpeta Content de nuestro proyecto de unreal.
 
 ![Config](Imagenes/Guia_UE_1.png)
 
-Una vez configurado el componente puedes hacer inferencias con el modelo entrenado con el nodo Run Inference dentro del Event Graph.
+Antes de pasar a la siguiente parte queremos que sepas que hay un Actor Blueprint de los siguientes pasos donde ya hay una configuración acerca de un ejemplo ya montado para que te sirva de ayuda, el cuál, se encuentra en Content/TFG-Castellanos-Sanchez/IA, y se llama Test_EmotionIA. Por lo tanto, una vez configurado el componente puedes hacer inferencias con el modelo entrenado con el nodo Run Inference dentro del Event Graph.
 
 Requerirá como parámetro un vector de floats con todos los parámetros de la nueva entrada. La salida será un vector de floats con las salidas en el mismo orden que se puso en el archivo config.ini en el parámetro OUTPUT_NAMES.
 
@@ -90,26 +92,30 @@ Ej:
 ## **2.4 Conexión con el sistema de animación**  
 <a name="24-sistema"></a>
 
-Para que las emociones calculadas por la IA deformen físicamente al personaje, necesitamos el ges-tor de animación.
+Para que las emociones calculadas por la IA deformen físicamente al personaje, necesitamos el gestor de animación.
 *	Navega a la ruta Content/TFG_CastellanosSanchez/Blueprints/ExpresionFacial y arrastra al nivel el actor BP_AnimationSystem.
-*	Selecciona el BP_AnimationSystem en tu nivel y, en el panel de Detalles, localiza la variable Metahuman Actor. Asígnale usando el cuentagotas el NPC (DemoSandBoxCharac-ter_Mover) que pusiste en el Paso 2.
+*	Selecciona el BP_AnimationSystem en tu nivel y, en el panel de Detalles, localiza la variable Metahuman Actor. Asígnale usando el cuentagotas el NPC (DemoSandBoxCharacter_Mover) que pusiste en el Paso 2.
 *	Activa la casilla de la variable Use Emotion. Esto habilitará la comunicación en tiempo real para que los cambios emocionales se reflejen físicamente en el NPC.
-*	Para terminar de conectar el modelo con el sistema de animación, accederemos al componen-te de EmocionIA, y veremos que al editar el blueprint hay una parte donde se llama a un mé-todo que es SetEmotion, donde se le pasa diferentes pines acerca de las emociones del NPC. Según las salidas generadas por el modelo, el usuario deberá asignar a su gusto que salida va a que emoción. 
+*	Para terminar de conectar el modelo con el sistema de animación, accederemos al componente al blueprint o parte del código creado en el paso 2.3, y tendremos que enviar el mapa de emociones que saca el modelo al actor de BP_AnimationSystem. Para ello podemos hacer algo parecido a la siguiente imagen:
+
+![Codigo3](Imagenes/SetEmotions.png)
+
+Donde Animation Actor es una variable de tipo actor que hace referencia al BP_AnimationSystem. 
 
 ## **2.5 Generación de acciones en el entorno**  
 <a name="25-acciones"></a>
 
 El comportamiento de la IA depende de los estímulos externos.
-*	El usuario debe programar en su nivel las acciones y eventos (variables de entorno) coheren-tes con el dataset con el que entrenó a la IA.
-*	Nuestra demo incluye ejemplos de interacción ya configurados que alteran estos estados, ta-les como la aparición de lluvia o la acción del jugador de equipar un arma e intentar golpear al NPC.
+*	El usuario debe programar en su nivel las acciones y eventos (variables de entorno) coherentes con el dataset con el que entrenó a la IA.
+*	Nuestra demo incluye ejemplos de interacción ya configurados que alteran estos estados, tales como la aparición de lluvia o la acción del jugador de equipar un arma e intentar golpear al NPC.
 
 ## **2.6 Reacciones y árboles de estado (StateTrees)**  
 <a name="26-statetrees"></a>
 
 Finalmente, el NPC debe traducir esas emociones en comportamientos de IA.
 *	Asegúrate de que tu NPC está poseído por el controlador de IA proporcionado: AIC_NPC_Demo.
-*	A este controlador se le debe pasar por parámetro un State Tree (Árbol de Estados), que el usuario diseñará para dictar cómo reacciona el NPC ante la amenaza, la alegría, etc.
-*	Plantilla disponible: Proporcionamos un State Tree a modo de plantilla que incluye estados lógicos fundamentales (Sentirse amenazado, Caminar, Correr). Recomendamos a los usuarios utilizar este árbol como un Linked Asset (Sub-árbol) dentro de sus propios State Trees prin-cipales para agilizar el desarrollo de reacciones complejas.
+*	A este controlador se le debe pasar por parámetro un State Tree (Árbol de Estados), que el usuario diseñará para dictar cómo reacciona el NPC ante las diferentes acciones del entorno. Para este paso también proporcionamos un ejemplo de uso de un State Tree que puedes encontrar en Content/TFG_CastellanosSanchez/Blueprints/AI/StateTree llamado ST_NPC_Principal
+*	Plantilla disponible: Proporcionamos un State Tree a modo de plantilla que incluye estados lógicos fundamentales (Sentirse amenazado, Caminar, Correr). Recomendamos a los usuarios utilizar este árbol como un Linked Asset (Sub-árbol) dentro de sus propios State Trees principales para agilizar el desarrollo de reacciones complejas.
 
 ---
 
