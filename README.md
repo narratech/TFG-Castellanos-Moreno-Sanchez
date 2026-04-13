@@ -21,7 +21,7 @@ Esta herramienta busca aprovechar las capacidades de animación de Unreal Engine
 
 Para entender cómo configurar el entorno, entrenar el modelo de emociones e integrar el plugin paso a paso en tu proyecto de Unreal Engine, consulta nuestra guía completa:
 
-* **[Leer la Guía de Usuario de la Herramienta](Guia_Usuario.md)**
+* **[Leer la Guía de Usuario de la Herramienta](Guias/IA/Guia_Usuario.md)**
 
 *(Nota: La guía incluye instrucciones detalladas sobre el uso de scripts `.bat`, la configuración del `config.ini` y la integración con Blueprints).*
 
