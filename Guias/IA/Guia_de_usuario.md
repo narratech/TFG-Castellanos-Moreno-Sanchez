@@ -90,7 +90,7 @@ Dispone de un Actor Blueprint de ejemplo ya configurado en `Content/TFG-Castella
 Utilice el nodo **`Run Inference`** dentro del Event Graph para realizar predicciones.
 
 * **Entrada:** Un vector de floats (`Array<float>`) con los parámetros de entrada.
-* **Salida:** Un vector de floats ordenado según el parámetro `OUTPUT_NAMES` del `config.ini`.
+* **Salida:** Un diccionario de clave string y valor float con los nombres según el parámetro `OUTPUT_NAMES` del `config.ini`.
 
 ![Nodo Run Inference](Imagenes/Guia_UE_5.png)
 
