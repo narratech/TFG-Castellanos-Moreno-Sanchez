@@ -14,8 +14,8 @@
    * 2.2 [El personaje base (NPC)](#22-el-personaje-base-npc)
    * 2.3 [Configuración del Cerebro (Componente EmotionAI)](#23-configuración-del-cerebro-componente-emotionai)
    * 2.4 [Conexión con el sistema de animación](#24-conexión-con-el-sistema-de-animación)
-   * 2.5 [Generación de acciones en el entorno](#25-generación-de-acciones-en-el-entorno)
-   * 2.6 [Reacciones y árboles de estado (StateTrees)](#26-reacciones-y-árboles-de-estado-statetrees)
+   * 2.5 [Interacción y Control del Entorno (Variables Dinámicas)](#25-interaccion-control-del-entorno)
+   * 2.6 [Arquitectura de Comportamiento: StateTrees y Animaciones](#26-reacciones-y-árboles-de-estado-statetrees)
 3. [**Ampliación de Información y Referencia Técnica**](#3-ampliación-de-información-y-referencia-técnica)
    * 3.1 [Configuración de parámetros (`config.ini`)](#31-configuración-de-parámetros-configini)
    * 3.2 [Referencia de Scripts de Ejecución](#32-referencia-de-scripts-de-ejecución)
@@ -58,14 +58,16 @@ Si desea validar el entrenamiento con nuevos datos empíricos:
 
 # 2. Guía de instalación del Plugin en Unreal Engine <a name="2-guía-de-instalación-del-plugin-en-unreal-engine"></a>
 
+> **Nota de Diseño:** Para facilitar las pruebas y la integración, esta guía se apoya en los sistemas preconstruidos utilizados en nuestra **Demo1**. En lugar de programar la lógica desde cero, le guiaremos para implementar nuestras herramientas modulares. De esta forma, obtendrá una IA funcional de forma casi inmediata, comprendiendo en cada paso el funcionamiento interno del sistema.
+
 **Paso previo:** Copie el modelo generado (ubicado en la carpeta `models`) dentro del directorio `Content` de su proyecto de Unreal Engine.
 
 ## 2.1 Preparación del entorno y navegación <a name="21-preparación-del-entorno-y-navegación"></a>
 
 Para garantizar el correcto funcionamiento de la Inteligencia Artificial, el entorno debe soportar las acciones parametrizadas durante el entrenamiento.
 
-* **Nivel de trabajo:** Puede crear un nivel nuevo o utilizar uno existente. La herramienta incluye un nivel preconfigurado de prueba: `Demo2`, localizado en `Content/TFG-Castellanos-Sanchez/Levels`.
-* **Volumen de Navegación:** Es estrictamente necesario añadir un volumen de navegación para permitir el desplazamiento del NPC (patrullaje, huida, etc.). Desde el panel *Place Actors*, arrastre un `NavMesh Bounds Volume` a la escena y escálelo hasta cubrir toda la superficie transitable.
+* **Nivel de trabajo:** Puede crear un nivel nuevo o utilizar uno existente. Recomendamos encarecidamente utilizar el nivel preconfigurado de prueba: `Demo2`, localizado en `Content/TFG-Castellanos-Sanchez/Levels`. De esta forma será más rápido llegar a nuestro objetivo de crear un nivel parecido al de la Demo1
+* **Volumen de Navegación:** Es estrictamente necesario añadir un volumen de navegación para permitir el desplazamiento del NPC (patrullaje, huida, etc.). Desde el panel *Place Actors*, arrastre un `NavMesh Bounds Volume` a la escena y escálelo hasta cubrir toda la superficie transitable. Pulsando la tecla **P** podrá visualizar en verde las zonas navegables.
 
 ## 2.2 El personaje base (NPC) <a name="22-el-personaje-base-npc"></a>
 
@@ -114,19 +116,50 @@ Para reflejar físicamente las emociones procesadas:
 ![Set Emotions](Imagenes/SetEmotions.png)
 *(Donde `Animation Actor` es una referencia a la instancia de `BP_AnimationSystem`)*.
 
-## 2.5 Generación de acciones en el entorno <a name="25-generación-de-acciones-en-el-entorno"></a>
+## 2.5 Interacción y Control del Entorno (Variables Dinámicas) <a name="25-interaccion-control-del-entorno"></a>
 
-La IA reacciona dinámicamente a los estímulos. Es responsabilidad del desarrollador programar las variables de entorno en el nivel para que sean coherentes con el dataset de entrenamiento.
-*La demo incluida contiene ejemplos preconfigurados como precipitaciones (lluvia) o eventos de amenaza (jugador equipando un arma).*
+La IA reacciona dinámicamente a los estímulos. Para facilitar las pruebas, hemos incluido sistemas preconfigurados que actúan como "disparadores" para las emociones del NPC:
 
-## 2.6 Reacciones y árboles de estado (StateTrees) <a name="26-reacciones-y-árboles-de-estado-statetrees"></a>
+### Gestor Climático (`BP_WeatherManager`)
+Este Blueprint global controla el clima del nivel. Arrástrelo a su escena.
+* **¿Qué hace?** Modifica visualmente el entorno (nubes, lluvia, iluminación) y sirve de referencia global para todos los NPCs.
+* **Variables Clave:** * `Esta Lloviendo` (Booleano): Al activarse, los Evaluadores de la IA detectan el cambio de clima y el GRU ajusta las emociones, obligando al NPC a buscar refugio o calentarse.
+  * Dispone de líneas de tiempo (Timelines) internas para controlar la intensidad de la precipitación.
 
-La traducción de emociones a comportamientos requiere el uso de StateTrees:
+### Objetos Interactuables (Ej. El Arma / Pistola)
+Dentro de la demo encontrará objetos interactuables diseñados para alterar el comportamiento del NPC.
+* **Uso del Arma:** El jugador puede interactuar con el arma (pulsando la tecla `E` para recogerla/equiparla). Al hacer clic, el arma apuntará.
+* **Impacto en la IA:** El NPC cuenta con conos de visión. Si el jugador entra en su campo de visión con el arma equipada, el estado de amenaza (`IsReaction`) se vuelve verdadero. El modelo GRU procesará un aumento drástico del miedo, lo que obligará al NPC a interrumpir sus tareas y huir al punto de escape más lejano.
 
-1. Verifique que el NPC está poseído por el controlador de IA designado: **`AIC_NPC_Demo`**.
-2. Asigne un **State Tree** por parámetro a este controlador. Dispone de un ejemplo funcional en `Content/TFG_CastellanosSanchez/Blueprints/AI/StateTree` llamado `ST_NPC_Principal`.
 
-> **Recomendación de Diseño:** Utilice el árbol base proporcionado (que incluye estados lógicos como *Sentirse amenazado, Caminar, Correr*) como **Linked Asset** dentro de sus propios StateTrees personalizados para optimizar tiempos de desarrollo.
+## 2.6 Arquitectura de Comportamiento: StateTrees y Animaciones <a name="26-reacciones-y-árboles-de-estado-statetrees"></a>
+
+El puente entre las emociones predichas por el GRU y las acciones físicas del personaje se gestiona mediante un **State Tree**. 
+
+Asigne el controlador de IA proporcionado (**`AIC_NPC_Demo`**) a su NPC. Este controlador utiliza el árbol principal **`ST_NPC_Principal`** (ubicado en `Content/TFG_CastellanosSanchez/Blueprints/AI/StateTree`).
+
+### 2.6.1 Estructura del `ST_NPC_Principal`
+Nuestro árbol de estados funciona por un estricto sistema de prioridades (de arriba a abajo):
+
+1. **Reacción de Impacto (Prioridad Máxima):** Si el NPC es golpeado en la escena, interrumpe inmediatamente cualquier acción para reproducir una animación de dolor (Frente o Espalda).
+2. **Threat State (Amenaza):** Si el NPC detecta el arma del jugador, evalúa la distancia. Si está lejos, huye a un punto seguro (`EscapePoint`).
+3. **Weather State (Clima):** Si `BP_WeatherManager` indica que llueve, el NPC comprueba si está bajo techo mediante *Raycasting*. Si está fuera, corre al interior de la casa. Si está dentro, reproduce animaciones de confort (calentarse en la chimenea).
+4. **Rutine State (Patrulla):** Es el comportamiento por defecto si no hay alteraciones en el entorno.
+
+### 2.6.2 Sistema de Patrullas (`BP_PatrolPoint`)
+Para dar vida al nivel, utilice los `BP_PatrolPoint`.
+* Arrastre varios de estos puntos al mapa.
+* Seleccione un `BP_PatrolPoint` y, en su panel de detalles, añada otro punto a su variable de *Siguiente Punto*.
+* El `Rutine State` del NPC leerá esta red de nodos y caminará de uno a otro de forma ininterrumpida hasta que un evento de clima o combate lo asuste.
+
+### 2.6.3 Modularidad: Linked Assets (Sub-Árboles)
+Nuestra arquitectura es altamente modular. La lógica de combate y clima está encapsulada en **Linked Assets**. 
+* **Aplicación Práctica:** Si usted crea su propio *State Tree* desde cero para dicho NPC, no necesita reprogramar la logica de reacciones de este. Simplemente arrastre nuestro estado "Linked Asset" a su árbol, y su nuevo NPC contará con 3 estados muy utiles a elegir según los parametros que se le pase, a dicho arbol. Se podrá elegir si quiere realizar una acción, en la que para ello se deberá contar con un gameplay tag y un data asset mencionados a continuación, o si quiere correr o andar.
+
+### 2.6.4 Gameplay Tags y Data Assets (Animaciones Dinámicas)
+En lugar de forzar animaciones fijas en el código, el State Tree utiliza **Gameplay Tags** (Ej. `Anim.Reaction.Scared` o `Anim.Hit.Front`).
+* **Data Assets:** En la carpeta de la herramienta encontrará *Data Assets* vinculados a estas etiquetas.
+* **¿Qué significa esto para el desarrollador?** Cuando el NPC se asusta, el código pide la etiqueta `Anim.Reaction.Scared`. El sistema busca el Data Asset asociado y reproduce la secuencia de animación correspondiente, a elegir si se quiere realizar un animación random o si se quiere hacer en secuencia. Se deberá especificar en el "Linked Asset". Si desea cambiar la animación de un personaje, solo debe sustituir el *Animation Montage* dentro del Data Asset, **sin necesidad de tocar ni una sola línea de código en el State Tree o en los Blueprints**.
 
 ---
 
