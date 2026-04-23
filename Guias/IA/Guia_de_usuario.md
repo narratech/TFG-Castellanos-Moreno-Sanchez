@@ -146,21 +146,60 @@ Nuestro árbol de estados funciona por un estricto sistema de prioridades (de ar
 3. **Weather State (Clima):** Si `BP_WeatherManager` indica que llueve, el NPC comprueba si está bajo techo mediante *Raycasting*. Si está fuera, corre al interior de la casa. Si está dentro, reproduce animaciones de confort (calentarse en la chimenea).
 4. **Rutine State (Patrulla):** Es el comportamiento por defecto si no hay alteraciones en el entorno.
 
-### 2.6.2 Sistema de Patrullas (`BP_PatrolPoint`)
-Para dar vida al nivel, utilice los `BP_PatrolPoint`.
-* Arrastre varios de estos puntos al mapa.
-* Seleccione un `BP_PatrolPoint` y, en su panel de detalles, añada otro punto a su variable de *Siguiente Punto*.
-* El `Rutine State` del NPC leerá esta red de nodos y caminará de uno a otro de forma ininterrumpida hasta que un evento de clima o combate lo asuste.
+### 2.6.2 Sistema de Patrullas Dinámicas (`BP_PatrolPoint`)
+
+Para dotar al nivel de vida, el NPC necesita moverse de forma autónoma cuando no está reaccionando a un estímulo emocional. En lugar de programar coordenadas fijas en el código, hemos implementado un sistema utilizando el actor **`BP_PatrolPoint`**.
+
+Este sistema permite al diseñador de niveles crear rutas complejas de forma visual directamente en el editor.
+
+**1. ¿Qué es el `BP_PatrolPoint`?**
+Es un Blueprint muy ligero que actúa como una baliza o destino. Contiene lógica interna para decirle al NPC hacia dónde debe ir después y cuánto tiempo debe descansar al llegar.
+
+**2. Cómo crear un circuito de patrulla en su nivel:**
+* Vaya a la carpeta `Content/TFG-Castellanos-Moreno-Sanchez\Editor`y abra el archivo `EUW_PatrolPoints` y corra el widget del editor, esto abrirá una ventana para ir creando PatrolPoints a partir del seleccionado.
+* Vaya a la carpeta `Content/TFG_CastellanosSanchez/Blueprints/AI` y arrastre un **`BP_PatrolPoint`** a su escena.
+* Seleccione el **PatrolPoint**. En su pantalla abierta del `EUW_PatrolPoints`, dale a **`Next Patrol Point`** y verá que se crea otro punto.
+* Existe la opción de darle al boton de  **`Between Patrol Point`**, para ello deberá seleccionar un punto A y un punto C, creandose así un punto B. Por lo tanto el recorrido seria A -> B -> C y C -> B -> A
+* Para cerrar el circuito y crear un bucle infinito, en el Punto C seleccione de nuevo el Punto A.
+
+**3. Personalización del comportamiento por punto:**
+En el panel de detalles de cada `BP_PatrolPoint` encontrará variables adicionales (como `WaitTime` o *Tiempo de espera*). Esto le permite crear un comportamiento orgánico: puede hacer que el NPC llegue a un punto y espere 5 segundos, pero que al llegar a otro punto continúe caminando inmediatamente (espera = 0). También hay una varibale de Gameplay Tag, para asignar un las animaciones que realizarán al llegar a dicho punto.
 
 ### 2.6.3 Modularidad: Linked Assets (Sub-Árboles)
 Nuestra arquitectura es altamente modular. La lógica de combate y clima está encapsulada en **Linked Assets**. 
-* **Aplicación Práctica:** Si usted crea su propio *State Tree* desde cero para dicho NPC, no necesita reprogramar la logica de reacciones de este. Simplemente arrastre nuestro estado "Linked Asset" a su árbol, y su nuevo NPC contará con 3 estados muy utiles a elegir según los parametros que se le pase, a dicho arbol. Se podrá elegir si quiere realizar una acción, en la que para ello se deberá contar con un gameplay tag y un data asset mencionados a continuación, o si quiere correr o andar.
+* **Aplicación Práctica:** Si usted crea su propio *State Tree* desde cero para un NPC diferente, no necesita reprogramar cómo huir de las armas. Simplemente arrastre nuestro estado "Linked Asset" a su árbol, y su nuevo NPC heredará automáticamente todas nuestras reacciones de supervivencia y análisis del GRU.
 
-### 2.6.4 Gameplay Tags y Data Assets (Animaciones Dinámicas)
-En lugar de forzar animaciones fijas en el código, el State Tree utiliza **Gameplay Tags** (Ej. `Anim.Reaction.Scared` o `Anim.Hit.Front`).
-* **Data Assets:** En la carpeta de la herramienta encontrará *Data Assets* vinculados a estas etiquetas.
-* **¿Qué significa esto para el desarrollador?** Cuando el NPC se asusta, el código pide la etiqueta `Anim.Reaction.Scared`. El sistema busca el Data Asset asociado y reproduce la secuencia de animación correspondiente, a elegir si se quiere realizar un animación random o si se quiere hacer en secuencia. Se deberá especificar en el "Linked Asset". Si desea cambiar la animación de un personaje, solo debe sustituir el *Animation Montage* dentro del Data Asset, **sin necesidad de tocar ni una sola línea de código en el State Tree o en los Blueprints**.
+**1. ¿Cómo procesa el State Tree los Patrol Points?**
+El `Rutine State` del árbol principal tiene una Tarea (Task) asignada que lee el punto actual guardado en la memoria del NPC. El flujo es el siguiente:
+1. El NPC camina hacia el punto actual.
+2. Al llegar, la tarea lee el tiempo de espera y pausa la ejecución.
+3. Transcurrido el tiempo, la tarea lee la variable `Next Patrol Point` de esa baliza, actualiza la memoria del NPC con el nuevo destino, y el ciclo se reinicia.
 
+### 2.6.4 Modularidad Animada: Gameplay Tags y Data Assets
+
+Uno de los mayores errores en el desarrollo de IA es "hardcodear" (fijar directamente en el código) las animaciones. Si le decimos al State Tree *"Reproduce la animación de huir de Pedro"*, ese State Tree ya no servirá para "María", porque intentará usar el esqueleto de Pedro.
+
+Para resolver esto y hacer que nuestra IA sea escalable, la demo utiliza una arquitectura basada en **Gameplay Tags** y **Data Assets**. Esto permite que un único State Tree gobierne a infinitos NPCs, y que cada uno se anime con su propio estilo.
+
+**1. Las Etiquetas (Gameplay Tags)**
+Una *Gameplay Tag* es simplemente una etiqueta jerárquica (texto) que el motor reconoce globalmente. En lugar de decir "Reproduce Animación X", el State Tree ordena: *"Ejecuta la acción asociada a la etiqueta `Anim.Reaction.Scared`"*.
+* *¿Cómo usarlo?* Si abre una Tarea de animación en nuestro State Tree (`STT_PlayMontage`), verá que hay un parámetro de entrada que pide un `GameplayTag`. Usted selecciona la etiqueta deseada de la lista desplegable. También existe la posibilidad de utilizar el Gameplay Tag asignado en el Patrol Point, por lo que al llegar a dicho punto realiza la animación. 
+
+**2. El Diccionario de Animaciones (Data Assets)**
+Para que el NPC sepa qué animación física corresponde a esa etiqueta, utilizamos un **Data Asset**. Funciona como un diccionario de traducción personal de cada personaje.
+* En el directorio del proyecto, encontrará Data Assets creados a partir de una clase personalizada (ej. `DA_AnimationMap`).
+* Si abre uno de estos Data Assets, verá una lista (Map) que empareja una clave con un valor:
+  * **Clave (Key):** El Gameplay Tag (ej. `Anim.Hit.Front`).
+  * **Valor (Value):** El *Animation Montage* físico que debe reproducirse.
+
+**3. Implementación para el usuario:**
+Si usted quiere añadir nuevas animaciones o crear un NPC completamente nuevo con nuestro sistema, siga estos pasos:
+
+1. **Crear su Diccionario:** Haga clic derecho en el Content Browser > *Miscellaneous* > *Data Asset*. Seleccione la clase de mapeo de animaciones que proporcionamos.
+2. **Llenar el Diccionario:** Abra su nuevo Data Asset y añada tantas filas como necesite. Asigne una etiqueta (ej. `Anim.Routine.Idle`) y ponga al lado el *Animation Montage* de su propio personaje.
+3. **Equipar al Cerebro:** Vaya al Blueprint de su nuevo NPC. Seleccione su componente principal de comportamiento o variables y busque la ranura para el Data Asset de animación. Arrastre ahí el archivo que acaba de crear.
+
+**El resultado del flujo es instantáneo:** El State Tree dicta la lógica universal (Ej. "Has recibido un golpe, ejecuta la etiqueta `Anim.Hit`"). El NPC recibe la orden, consulta **su propio Data Asset**, encuentra la animación de dolor específica para su cuerpo, y la reproduce. No tendrá que reprogramar ni un solo nodo para añadir decenas de personajes distintos al juego.
 ---
 
 # 3. Ampliación de Información y Referencia Técnica <a name="3-ampliación-de-información-y-referencia-técnica"></a>
