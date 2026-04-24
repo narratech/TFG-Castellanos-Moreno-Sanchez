@@ -13,9 +13,10 @@
    * 2.1 [Preparación del entorno y navegación](#21-preparación-del-entorno-y-navegación)
    * 2.2 [El personaje base (NPC)](#22-el-personaje-base-npc)
    * 2.3 [Configuración del Cerebro (Componente EmotionAI)](#23-configuración-del-cerebro-componente-emotionai)
-   * 2.4 [Conexión con el sistema de animación](#24-conexión-con-el-sistema-de-animación)
-   * 2.5 [Interacción y Control del Entorno (Variables Dinámicas)](#25-interaccion-control-del-entorno)
-   * 2.6 [Arquitectura de Comportamiento: StateTrees y Animaciones](#26-reacciones-y-árboles-de-estado-statetrees)
+   * 2.4 [Conexión con el Cerebro (Componente `BPC_PsicologyNPC`)](#24-conexion-con-el-cerebro)
+   * 2.5 [Conexión con el sistema de animación](#25-conexión-con-el-sistema-de-animación)
+   * 2.6 [Interacción y Control del Entorno (Variables Dinámicas)](#26-interaccion-control-del-entorno)
+   * 2.7 [Arquitectura de Comportamiento: StateTrees y Animaciones](#27-reacciones-y-árboles-de-estado-statetrees)
 3. [**Ampliación de Información y Referencia Técnica**](#3-ampliación-de-información-y-referencia-técnica)
    * 3.1 [Configuración de parámetros (`config.ini`)](#31-configuración-de-parámetros-configini)
    * 3.2 [Referencia de Scripts de Ejecución](#32-referencia-de-scripts-de-ejecución)
@@ -104,7 +105,41 @@ Para la conversión de valores categóricos, utilice el nodo **`One Hot Encode w
 > El vector debe contener primero los valores continuos/discretos y posteriormente los categóricos, respetando el orden del dataset.
 > *Ejemplo:* > `[DiscretoA, DiscretoB, CategoricoA, DiscretoC, CategoricoB]` **➜** `[DiscretoA, DiscretoB, DiscretoC, CategoricoA_1...CategoricoA_X, CategoricoB_1...CategoricoB_X]`
 
-## 2.4 Conexión con el sistema de animación <a name="24-conexión-con-el-sistema-de-animación"></a>
+## 2.4 Conexión con el Cerebro (Componente `BPC_PsicologyNPC`) <a name="24-conexion-con-el-cerebro"></a>
+
+> **Recomendación de Diseño (Acelerador de Integración):** > En lugar de programar la memoria y los sensores de cada NPC desde cero, le sugerimos encarecidamente utilizar nuestro componente modular **`BPC_PsicologyNPC`**. Este componente actúa como la "corteza prefrontal" del personaje: gestiona sus recuerdos, evalúa el entorno periódicamente y procesa quién golpea a quién, enviando los datos limpios al modelo GRU. Es un requerimiento clave para que los comportamientos avanzados de la demo funcionen sin configuraciones extra.
+
+Para implementarlo, simplemente abra el Blueprint de su personaje (ej. `DemoSandBoxCharacter_Mover`), haga clic en *Add Component* y añada **`BPC_PsicologyNPC`**.
+
+### 2.4.1 Variables Expuestas (Configuración en Editor)
+Una vez añadido el componente, selecciónelo para ver su panel de Detalles. Encontrará una serie de variables públicas que debe configurar directamente en el editor del nivel para cada NPC instanciado:
+
+* **Categoría *Predeterminado***
+  * **`Test Emotio AI`:** Referencia directa al actor `Test_EmotionIA` de la escena, el cual contiene la red neuronal GRU encargada de calcular la inferencia.
+* **Categoría *Patrol Point***
+  * **`Actor To Follow`:** El actor o punto de ruta inicial hacia el que el NPC debe dirigirse al empezar la simulación.
+  * **`Escape Patrol Point` (Array):** Una lista de *Target Points* distribuidos por el mapa que el NPC utilizará como refugios aleatorios cuando el GRU detecte un nivel alto de miedo.
+  * **`Fire Patrol Point`:** Una ubicación segura predefinida relacionada con el clima (por ejemplo, una chimenea) a la que el NPC acudirá si la temperatura es desfavorable.
+* **Categoría *Social***
+  * **`Social Memory` (Diccionario / Map):** ¡Vital para la interacción! Es un mapa que relaciona *Actores* reales del nivel con nuestro *Enum* `E_SocialRole` (Ej: El jugador = "Jugador", Otro NPC = "NPC1"). El componente utiliza esta memoria para saber a quién está viendo.
+* **Categoría *Entorno***
+  * **`Range`:** El radio de visión y consciencia del NPC (en unidades de Unreal).
+
+### 2.4.2 Funcionamiento Interno (¿Qué hace este componente por usted?)
+
+Si decide investigar el Blueprint por dentro, verá que hemos optimizado la arquitectura siguiendo estándares de la industria AAA:
+
+**1. Optimización del Rendimiento (Behavior Tick)**
+En lugar de saturar la CPU evaluando distancias en cada fotograma (`Event Tick`), el componente inicializa un **Timer** en el `Begin Play` que se ejecuta cada 0.3 segundos (`ServerBehaviourTick`). Solo si el NPC puede actuar (`CanTakeAction`), procederá a recalcular las distancias a otros NPCs y evaluar a su objetivo actual. Esto permite tener múltiples NPCs en pantalla manteniendo un rendimiento óptimo.
+
+**2. Sistema de Memoria de Navegación (`SetActorToFollow`)**
+Cuenta con una lógica robusta para interrumpir rutas. Cuando surge una emergencia (ej. huir de un disparo), el evento `SetActorToFollow` recibe el nuevo punto de escape, pero permite guardar el destino original en la variable **`Old Actor To Follow`**. Cuando la emergencia termina, el NPC recuperará este dato y continuará su rutina exactamente por donde la dejó.
+
+**3. Testigo de Combate y Roles Sociales (`OnWitnessAttack`)**
+Es el sistema más avanzado del componente. Si ocurre una pelea en el radio de visión del NPC, este evento recibe quién es el Agresor y quién es la Víctima. 
+El código busca a estos actores dentro de su **`Social Memory`** (el diccionario que usted configuró). Al identificar sus roles (por ejemplo, si descubre que la víctima es "Yo" o es un "Aliado"), mapea inmediatamente estos roles en las variables `Rol Agresor` y `Rol Victima` y dispara una actualización directa al Cerebro Emocional (`Set Roles Emotion AI`). El modelo GRU procesará este evento al instante, alterando drásticamente el estado emocional del NPC hacia el miedo o la ira.
+
+## 2.5 Conexión con el sistema de animación <a name="25-conexión-con-el-sistema-de-animación"></a>
 
 Para reflejar físicamente las emociones procesadas:
 
@@ -116,7 +151,7 @@ Para reflejar físicamente las emociones procesadas:
 ![Set Emotions](Imagenes/SetEmotions.png)
 *(Donde `Animation Actor` es una referencia a la instancia de `BP_AnimationSystem`)*.
 
-## 2.5 Interacción y Control del Entorno (Variables Dinámicas) <a name="25-interaccion-control-del-entorno"></a>
+## 2.6 Interacción y Control del Entorno (Variables Dinámicas) <a name="26-interaccion-control-del-entorno"></a>
 
 La IA reacciona dinámicamente a los estímulos. Para facilitar las pruebas, hemos incluido sistemas preconfigurados que actúan como "disparadores" para las emociones del NPC:
 
@@ -132,13 +167,13 @@ Dentro de la demo encontrará objetos interactuables diseñados para alterar el 
 * **Impacto en la IA:** El NPC cuenta con conos de visión. Si el jugador entra en su campo de visión con el arma equipada, el estado de amenaza (`IsReaction`) se vuelve verdadero. El modelo GRU procesará un aumento drástico del miedo, lo que obligará al NPC a interrumpir sus tareas y huir al punto de escape más lejano.
 
 
-## 2.6 Arquitectura de Comportamiento: StateTrees y Animaciones <a name="26-reacciones-y-árboles-de-estado-statetrees"></a>
+## 2.7 Arquitectura de Comportamiento: StateTrees y Animaciones <a name="27-reacciones-y-árboles-de-estado-statetrees"></a>
 
 El puente entre las emociones predichas por el GRU y las acciones físicas del personaje se gestiona mediante un **State Tree**. 
 
 Asigne el controlador de IA proporcionado (**`AIC_NPC_Demo`**) a su NPC. Este controlador utiliza el árbol principal **`ST_NPC_Principal`** (ubicado en `Content/TFG_CastellanosSanchez/Blueprints/AI/StateTree`).
 
-### 2.6.1 Estructura del `ST_NPC_Principal`
+### 2.7.1 Estructura del `ST_NPC_Principal`
 Nuestro árbol de estados funciona por un estricto sistema de prioridades (de arriba a abajo):
 
 1. **Reacción de Impacto (Prioridad Máxima):** Si el NPC es golpeado en la escena, interrumpe inmediatamente cualquier acción para reproducir una animación de dolor (Frente o Espalda).
@@ -146,7 +181,7 @@ Nuestro árbol de estados funciona por un estricto sistema de prioridades (de ar
 3. **Weather State (Clima):** Si `BP_WeatherManager` indica que llueve, el NPC comprueba si está bajo techo mediante *Raycasting*. Si está fuera, corre al interior de la casa. Si está dentro, reproduce animaciones de confort (calentarse en la chimenea).
 4. **Rutine State (Patrulla):** Es el comportamiento por defecto si no hay alteraciones en el entorno.
 
-### 2.6.2 Sistema de Patrullas Dinámicas (`BP_PatrolPoint`)
+### 2.7.2 Sistema de Patrullas Dinámicas (`BP_PatrolPoint`)
 
 Para dotar al nivel de vida, el NPC necesita moverse de forma autónoma cuando no está reaccionando a un estímulo emocional. En lugar de programar coordenadas fijas en el código, hemos implementado un sistema utilizando el actor **`BP_PatrolPoint`**.
 
@@ -165,7 +200,7 @@ Es un Blueprint muy ligero que actúa como una baliza o destino. Contiene lógic
 **3. Personalización del comportamiento por punto:**
 En el panel de detalles de cada `BP_PatrolPoint` encontrará variables adicionales (como `WaitTime` o *Tiempo de espera*). Esto le permite crear un comportamiento orgánico: puede hacer que el NPC llegue a un punto y espere 5 segundos, pero que al llegar a otro punto continúe caminando inmediatamente (espera = 0). También hay una varibale de Gameplay Tag, para asignar un las animaciones que realizarán al llegar a dicho punto.
 
-### 2.6.3 Modularidad: Linked Assets (Sub-Árboles)
+### 2.7.3 Modularidad: Linked Assets (Sub-Árboles)
 Nuestra arquitectura es altamente modular. La lógica de combate y clima está encapsulada en **Linked Assets**. 
 * **Aplicación Práctica:** Si usted crea su propio *State Tree* desde cero para un NPC diferente, no necesita reprogramar cómo huir de las armas. Simplemente arrastre nuestro estado "Linked Asset" a su árbol, y su nuevo NPC heredará automáticamente todas nuestras reacciones de supervivencia y análisis del GRU.
 
@@ -175,7 +210,7 @@ El `Rutine State` del árbol principal tiene una Tarea (Task) asignada que lee e
 2. Al llegar, la tarea lee el tiempo de espera y pausa la ejecución.
 3. Transcurrido el tiempo, la tarea lee la variable `Next Patrol Point` de esa baliza, actualiza la memoria del NPC con el nuevo destino, y el ciclo se reinicia.
 
-### 2.6.4 Modularidad Animada: Gameplay Tags y Data Assets
+### 2.7.4 Modularidad Animada: Gameplay Tags y Data Assets
 
 Uno de los mayores errores en el desarrollo de IA es "hardcodear" (fijar directamente en el código) las animaciones. Si le decimos al State Tree *"Reproduce la animación de huir de Pedro"*, ese State Tree ya no servirá para "María", porque intentará usar el esqueleto de Pedro.
 
