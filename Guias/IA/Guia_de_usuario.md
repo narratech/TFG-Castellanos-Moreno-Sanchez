@@ -174,12 +174,35 @@ El puente entre las emociones predichas por el GRU y las acciones físicas del p
 Asigne el controlador de IA proporcionado (**`AIC_NPC_Demo`**) a su NPC. Este controlador utiliza el árbol principal **`ST_NPC_Principal`** (ubicado en `Content/TFG_CastellanosSanchez/Blueprints/AI/StateTree`).
 
 ### 2.7.1 Estructura del `ST_NPC_Principal`
-Nuestro árbol de estados funciona por un estricto sistema de prioridades (de arriba a abajo):
+Para que el árbol de comportamientos funcione sin necesidad de escribir código visual (Blueprints), se apoya en tres pilares fundamentales que usted puede ver en el panel de Detalles del `ST_NPC_Principal`: **Contexto, Parámetros y Evaluadores**.
 
-1. **Reacción de Impacto (Prioridad Máxima):** Si el NPC es golpeado en la escena, interrumpe inmediatamente cualquier acción para reproducir una animación de dolor (Frente o Espalda).
-2. **Threat State (Amenaza):** Si el NPC detecta el arma del jugador, evalúa la distancia. Si está lejos, huye a un punto seguro (`EscapePoint`).
-3. **Weather State (Clima):** Si `BP_WeatherManager` indica que llueve, el NPC comprueba si está bajo techo mediante *Raycasting*. Si está fuera, corre al interior de la casa. Si está dentro, reproduce animaciones de confort (calentarse en la chimenea).
-4. **Rutine State (Patrulla):** Es el comportamiento por defecto si no hay alteraciones en el entorno.
+**1. El Contexto (Context)**
+Define sobre "quién" se está ejecutando el árbol. Automáticamente, toma como referencia el **Actor** (el NPC) y su **AIController**. Estas referencias globales se inyectan hacia abajo, permitiendo que cualquier Tarea o Evaluador sepa exactamente a qué NPC está controlando.
+
+**2. Parámetros del Árbol (Parameters)**
+Son variables internas que actúan como la memoria a corto plazo de la IA. Por ejemplo:
+* `RangeToEscapePistol` *(Float)*: La distancia (ej. 200.0) a la que el NPC considera que la pistola está lo suficientemente lejos como para sentirse a salvo.
+* `Out_ReactionSequence` *(Booleano)*: Guarda si la secuencia de animaciones del data asset se quiere ejecutar en secuencia (true) o si solo se quiere ejecutar una animación random de la secuencia (false)
+* `HasPlayedIntroReaction` *(Booleano)*: Una memoria para evitar que el NPC repita la animación inicial de, por ejemplo "susto", si el jugador no deja de apuntarle.
+
+**3. Los Evaluadores (Sensores de la IA)**
+Los evaluadores son el "sistema nervioso" del NPC. Se ejecutan en cada fotograma (*On Tick*) en el estado Raíz (*Root*), procesando el entorno y devolviendo variables de salida (`Salida` u `Output`) que el árbol utiliza para tomar decisiones instantáneas. Nuestra demo incluye:
+
+* **`STE_CombatMonitor` (Prioridad 1 - Impactos):**
+    * *Qué hace:* Se comunica con el componente de psicología.
+    * *Variables de Salida:* `Out_GetHit` (¿Me han pegado?), `Out_SomeoneWasHit` (¿Han pegado a alguien cerca?), `Out_FrontHit` (¿El golpe viene de frente?). 
+    * *Uso en la Jerarquía:* El primer estado del árbol lee `Si STE_CombatMonitor.Out_GetHit es True`. Si ocurre, bloquea el resto del árbol y fuerza la animación de impacto.
+* **`STE_PlayerThreatMonitor` (Prioridad 2 - Amenazas):**
+    * *Qué hace:* Vigila si el jugador está apuntando con un arma. Recibe como *Entrada* el parámetro `RangeToEscapePistol`.
+    * *Variables de Salida:* `Out_IsReaction` (El jugador apunta), `Out_ShouldRun` (Está demasiado cerca, toca correr).
+    * *Uso en la Jerarquía:* Si no hay combates, el árbol lee este evaluador. Si `Out_IsReaction` es *True*, transiciona al estado de huida si la pistola esta lejos o al estado de reacción si está muy cerca.
+* **`STE_WeatherMonitor` (Prioridad 3 - Clima):**
+    * *Qué hace:* Verifica el `BP_WeatherManager` y lanza un rayo virtual hacia arriba para saber si el NPC está a cubierto.
+    * *Variables de Salida:* `Out_IsRaining` (¿Llueve?), `Out_IsOutside` (¿Estoy en la calle?).
+    * *Uso en la Jerarquía:* Permite derivar al NPC hacia la casa o hacia una chimenea.
+* **`STE_GetPatrolDetails` (Prioridad 4 - Rutina):**
+    * * *Qué hace:* Lee el sistema de patrullas del nivel.
+    * *Variables de Salida:* `Out_CurrentPatrolPoint` (Punto al que debo ir ahora).
 
 ### 2.7.2 Sistema de Patrullas Dinámicas (`BP_PatrolPoint`)
 
@@ -204,11 +227,19 @@ En el panel de detalles de cada `BP_PatrolPoint` encontrará variables adicional
 Nuestra arquitectura es altamente modular. La lógica de combate y clima está encapsulada en **Linked Assets**. 
 * **Aplicación Práctica:** Si usted crea su propio *State Tree* desde cero para un NPC diferente, no necesita reprogramar cómo huir de las armas. Simplemente arrastre nuestro estado "Linked Asset" a su árbol, y su nuevo NPC heredará automáticamente todas nuestras reacciones de supervivencia y análisis del GRU.
 
-**1. ¿Cómo procesa el State Tree los Patrol Points?**
-El `Rutine State` del árbol principal tiene una Tarea (Task) asignada que lee el punto actual guardado en la memoria del NPC. El flujo es el siguiente:
-1. El NPC camina hacia el punto actual.
-2. Al llegar, la tarea lee el tiempo de espera y pausa la ejecución.
-3. Transcurrido el tiempo, la tarea lee la variable `Next Patrol Point` de esa baliza, actualiza la memoria del NPC con el nuevo destino, y el ciclo se reinicia.
+**El Flujo de Variables Hacia el Linked Asset:**
+Un Linked Asset funciona como una "Caja Negra" a la que hay que inyectarle datos desde el árbol padre. Tomando como ejemplo nuestro Sub-árbol de Reacciones (`ST_NPC_Reactions`), este requiere recibir por parámetro las siguientes variables:
+
+* **`bIsReaction` (Booleano):** Determina si existe una amenaza visual que requiera una reacción estática.
+* **`bShouldRun` (Booleano):** Determina si la amenaza es tan crítica que el NPC debe huir.
+* **`ReactionSequence` (Booleano):** Le dice al sub-árbol si quiere realizar el diccionario de animaciones en secuencia o coger una animación al azar.
+* **`LoopStartIndexInSequence` (Entero) y `HasPlayedIntro` (Booleano):** Si se ha elegido que se va a realizar el diccionario de animaciones en secuencia, es posible que en dicha secuencia no se quiera repetir la animación inicial, ya sea porque es un susto y solo quieres que se haga la primera vez. Para ello es necesario pasar un entero para ver a partir de que animación realizas el bucle de la secuencia, y poner el booleano a true para saber que la animación incial ya se ha ejecutado una vez y quieres partir del indice establecido en `LoopStartIndexInSequence`.
+
+**Jerarquía Interna del Linked Asset:**
+Una vez inyectados estos parámetros, el Sub-árbol elige internamente qué hacer evaluando dichas condiciones:
+1.  **`Run State`:** Se ejecuta inmediatamente `Si Parameters.bShouldRun es True`.
+2.  **`Reaction State`:** Se ejecuta `Si Parameters.bIsReaction es True` (y la anterior fue falsa). Llama a la tarea interna de reproducir las animaciones alimentándola con las tags recibidas.
+3.  **`Walk State` / `Wait`:** Si ambas condiciones booleanas son falsas, el NPC asume que el peligro ha pasado, procediendo a calmarse o caminar según corresponda, devolviendo finalmente el "Éxito en el árbol" para retornar al árbol principal.ia.
 
 ### 2.7.4 Modularidad Animada: Gameplay Tags y Data Assets
 
