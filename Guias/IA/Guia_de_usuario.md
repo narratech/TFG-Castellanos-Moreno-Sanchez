@@ -32,9 +32,7 @@
 Para inicializar el entorno de entrenamiento, es requisito indispensable tener instalado [Python](https://www.python.org/downloads/release/python-3144/).
 
 **Pasos de instalación:**
-> [!IMPORTANT]
-> (`poner enlace mas adelante del archivo comprimido`)
-1. Descargar el archivo comprimido del repositorio de GitHub y extraer su contenido en un directorio vacío.
+1. Descargar el [archivo comprimido](https://github.com/narratech/TFG-Castellanos-Sanchez/releases/tag/GRU_Trainer) del repositorio de GitHub y extraer su contenido en un directorio vacío.
 2. Navegar a la ruta `TFG-Castellanos-Sanchez\GRU` y ejecutar el script `import_dependencies.bat`. Este proceso generará automáticamente un entorno virtual dentro de la carpeta `venv`.
 3. Copiar el dataset propio (en formato `.csv` delimitado por comas) dentro del directorio `dataset`.
 
@@ -88,29 +86,38 @@ Se proporciona un actor preconfigurado (`DemoSandBoxCharacter_Mover`) ubicado en
 > [!IMPORTANT]
 > Revisar todo este apartado para adaptarlo para que en vez de que use directamente nuestro Test_EmotionIA, tengamos un blueprint donde tenga que ir metiendo o uniendo los nodos pero que en todo momento se le explique que hace para que entienda como funciona. Además debemos puntializar que en nuestra version hemos puesto variables para personalidad que deben instanciar en el editor, estaria bien darles algun ejemplo de personalidades a poner con una tabla o algo y explicarles rasgos de cada personalidad
 
-Para dotar al NPC de procesamiento emocional, añada el componente **`EmotionIA`** al Blueprint del personaje (ubicado en el `source` del proyecto). *Importante: Aplíquelo en el Blueprint, no como instancia en el nivel.*
+Para dotar al NPC de procesamiento emocional, utilizaremos el componente de `EmotionAI`.
+Dispone de un Actor Blueprint de ejemplo parcialmente configurado en `Content/TFG-Castellanos-Sanchez/IA` llamado `Test_EmotionIA`. 
 
-En el panel de detalles del componente:
-* Defina en **`Model Path`** la ruta y nombre del archivo de su modelo, utilizando la carpeta `Content` como raíz.
+Dentro del componente deberemos rellenar la variable Model Path a la ruta que contenga el modelo exportado en nuestro projecto tomando Content como raiz (tambien es necesario poner el nombre del archivo junto con la extension .onnx)
 
 ![Configuración del Modelo](Imagenes/Guia_UE_1.png)
 
 ### Inferencias desde Blueprints
-Dispone de un Actor Blueprint de ejemplo ya configurado en `Content/TFG-Castellanos-Sanchez/IA` llamado `Test_EmotionIA`. 
-Utilice el nodo **`Run Inference`** dentro del Event Graph para realizar predicciones.
+Antes de realizar la inferencia debemos agrupar los datos y vectorizar los que no sean numeros.
 
-* **Entrada:** Un vector de floats (`Array<float>`) con los parámetros de entrada.
-* **Salida:** Un diccionario de clave string y valor float con los nombres según el parámetro `OUTPUT_NAMES` del `config.ini`.
+Para ello, tomaremos como ejemplo el Actor Blueprint `Test_EmotionIA` mencionado previamente y seguiremos una serie de pasos que resumiran el flujo de trabajo de este componente.
 
-![Nodo Run Inference](Imagenes/Guia_UE_5.png)
+* **Agrupacion de dato numéricos:** Crearemos una variable de tipo *Array<float>* llamado `ArrayCombinado` y le estableceremos como valor inicial los valores numericos ya combinados dentro del EventGraph tal y como se ve en la imagen.
 
-Para la conversión de valores categóricos, utilice el nodo **`One Hot Encode with Categories`** pasando como parámetros el *string* a codificar y un array con los valores posibles.
+![Array combinado](Imagenes/Guia_UE_2.png)
+
+Con esto tendremos todos los valores numéricos ya agrupados dentro de nuestro array. Observe que el orden en el que aparecen los valores es el mismo que en el que aparecen dentro del dataset quitando los valores no numéricos.
+
+* **Añadir los valores no numéricos:** Recogeremos lo que hay en la variable *string* ya creada de `Ejecuta_Golpeo` y el *Array<string>* de `Ejecuta_Golpeo_Categories` y se lo pasaremos al nodo `One Hot Encode with Categories`. La variable `Ejecuta_Golpeo_Categories` contiene todos los posible valores que puede tomar `Ejecuta_Golpeo` sin importar el orden ya que internamente se ordena alfabeticamente (en el entrenamiento tambien sucede).
+A continuación, se lo añadiremos a nuestra variable `ArrayCombinado`.
+
+![Nodo Run Inference](Imagenes/Guia_UE_3.png)
+
+Volver a realizar el mismo proceso con `Recibe_Golpeo` y `Recibe_Golpeo_Categories`. Observe que el orden de `Ejecuta_Golpeo` y `Recibe_Golpeo` tambien coincide con el del dataset si no tenemos en cuenta los valores numericos.
+
+* **Realizar la inferencia del modelo:** Para esto usaremos el nodo `Add Time Step` pasandole como parametro nuestro `ArrayCombinado` y realizando después una inferencia con `Run Inference`. El resultado de la inferencia será un diccionario de valores numericos que usarán como clave los nombres utilizados en `OUTPUT_NAMES` al entrenar el modelo.
 
 ![Nodo One Hot Encode](Imagenes/Guia_UE_4.png)
 
-> **Formato de los datos para la Inferencia:**
-> El vector debe contener primero los valores continuos/discretos y posteriormente los categóricos, respetando el orden del dataset.
-> *Ejemplo:* > `[DiscretoA, DiscretoB, CategoricoA, DiscretoC, CategoricoB]` **➜** `[DiscretoA, DiscretoB, DiscretoC, CategoricoA_1...CategoricoA_X, CategoricoB_1...CategoricoB_X]`
+En lugar del nodo `Add Time Step` se puede usar el nodo `Change Time Step Table`, que en lugar de añadir un paso en el tiempo, permite establecer toda la tabla de pasos de tiempos (hay que asegurarse que la tabla es de tamaño Entradas * Sequencias).
+
+Para concluir, termine de enlazar la salida de `Run Inference` con el nodo `SET` de la variable `Emociones`.
 
 ## 2.4 Conexión con el Cerebro (Componente `BPC_PsicologyNPC`) <a name="24-conexion-con-el-cerebro"></a>
 
