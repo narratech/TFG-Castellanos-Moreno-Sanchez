@@ -48,15 +48,15 @@ Una vez completada la instalación y generado el entorno virtual, proceda con lo
 > (Explicar algo mejor por si no se entiende lo de cumplimentar los datos requeridos)
 
 El sistema permite dos modalidades de entrenamiento:
-* **Entrenamiento Directo:** Ejecutando `gru_only.bat`.
-* **Entrenamiento con Autoencoder (Aumento de datos):** Ejecutando `training.bat`. *(Existe una configuración por defecto en las secciones `[Autoencoder]` y `[GRU]` del `config.ini` que puede ser modificada según las necesidades del proyecto).*
+* **Entrenamiento Directo:** Ejecutando [`gru_only.bat`](#gruonly).
+* **Entrenamiento con Autoencoder (Aumento de datos):** Ejecutando [`training.bat`](#training). *(Existe una configuración por defecto en las secciones `[Autoencoder]` y `[GRU]` del `config.ini` que puede ser modificada según las necesidades del proyecto).*
 
 > **Nota:** En ambas modalidades, el sistema aplicará automáticamente la codificación *One-Hot* a las entradas correspondientes a las columnas categóricas.
 
 ### Pruebas y Validación (Testeo)
 Si desea validar el entrenamiento con nuevos datos empíricos:
 1. Añada los nuevos datos en un archivo llamado `realset.csv` dentro del directorio `dataset`.
-2. Ejecute el script `testeo.bat` (requiere haber generado previamente el modelo).
+2. Ejecute el script [`testeo.bat`](#testeo) (requiere haber generado previamente el modelo).
 3. Tras la validación, el modelo generado se ubicará en la carpeta `models`, quedando listo para su integración en Unreal Engine.
 
 ---
@@ -120,9 +120,6 @@ Para implementarlo, simplemente abra el Blueprint de su personaje (ej. `DemoSand
 
 ### 2.4.1 Variables Expuestas (Configuración en Editor)
 Una vez añadido el componente, selecciónelo para ver su panel de Detalles. Encontrará una serie de variables públicas que debe configurar directamente en el editor del nivel para cada NPC instanciado:
-
-> [!IMPORTANT]
-> Aclarar que algunas variables todavia no puede ser metidas pq se iran expplicando más adelante
 
 * **Categoría *Predeterminado***
   * **`Test Emotio AI`:** Referencia directa al actor `Test_EmotionIA` de la escena, el cual contiene la red neuronal GRU encargada de calcular la inferencia.
@@ -333,7 +330,7 @@ A continuación se detalla la documentación técnica avanzada sobre los paráme
 
 ## 3.2 Referencia de Scripts de Ejecución <a name="32-referencia-de-scripts-de-ejecución"></a>
 
-### `training.bat`
+### `training.bat`<a name="training"></a>  
 Script principal de pipeline para generación de datos y entrenamiento:
 * Genera casos de prueba sintéticos a partir del dataset original.
 * Aplica codificación *One-Hot* automáticamente a las columnas categóricas.
@@ -341,12 +338,12 @@ Script principal de pipeline para generación de datos y entrenamiento:
 * Muestra un gráfico de dispersión en consola con la distribución de los nuevos datos.
 * Entrena el modelo GRU y exporta los archivos necesarios para Unreal Engine (`gru_model.onnx` y `gru_model.onnx.data`) y un archivo `gru_model.pth` para testeos locales.
 
-### `gru_only.bat`
+### `gru_only.bat`<a name="gruonly"></a>  
 Script para entrenamiento directo:
 * Entrena el modelo utilizando exclusivamente los datos del dataset configurado, aplicando codificación *One-Hot*.
 * Muestra por consola las matrices de confusión resultantes y el porcentaje de precisión (*Accuracy*) final del modelo.
 
-### `testeo.bat`
+### `testeo.bat`<a name="testeo"></a>  
 Script de validación y auditoría:
 * Carga el modelo `gru_model.pth` de la carpeta `models` y realiza predicciones usando el dataset de prueba indicado.
 * Imprime por pantalla un análisis de correlación matemática entre las salidas reales del dataset de prueba y las inferidas por el modelo.
