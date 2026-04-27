@@ -274,20 +274,18 @@ Una *Gameplay Tag* es simplemente una etiqueta jerárquica (texto) que el motor 
 * *¿Cómo usarlo?* Si abre una Tarea de animación en nuestro State Tree (`STT_PlayMontage`), verá que hay un parámetro de entrada que pide un `GameplayTag`. Usted selecciona la etiqueta deseada de la lista desplegable. También existe la posibilidad de utilizar el Gameplay Tag asignado en el Patrol Point, por lo que al llegar a dicho punto realiza la animación. 
 
 **2. El Diccionario de Animaciones (Data Assets)**
-> [!IMPORTANT]
-> En este apartado debo cambiar los nombres de los ejemplos por los verdaderos
 
 Para que el NPC sepa qué animación física corresponde a esa etiqueta, utilizamos un **Data Asset**. Funciona como un diccionario de traducción personal de cada personaje.
-* En el directorio del proyecto, encontrará Data Assets creados a partir de una clase personalizada (ej. `DA_AnimationMap`).
-* Si abre uno de estos Data Assets, verá una lista (Map) que empareja una clave con un valor:
-  * **Clave (Key):** El Gameplay Tag (ej. `Anim.Hit.Front`).
-  * **Valor (Value):** El *Animation Montage* físico que debe reproducirse.
+* En el directorio del proyecto, encontrará Data Assets creados en `TFG-Castellanos-Sanchez\Blueprints\NPCs\DataAssets` a partir de una clase personalizada que vemos en `TFG-Castellanos-Sanchez\Blueprints\PrimaryDataAssets`.
+* Si abre uno de estos Data Assets, verá:
+  * **Clave (Key):** El Gameplay Tag (ej. `Anim.Reactions.Random`) con el se comparará en el `STT_PlayMontage` si tiene dicho data asset el NPC .
+  * **Lista de Montage:** *Animations Montages* físicos que se reproducirán en el juego.
 
 **3. Implementación para el usuario:**
 Si usted quiere añadir nuevas animaciones o crear un NPC completamente nuevo con nuestro sistema, siga estos pasos:
 
 1. **Crear su Diccionario:** Haga clic derecho en el Content Browser > *Miscellaneous* > *Data Asset*. Seleccione la clase de mapeo de animaciones que proporcionamos.
-2. **Llenar el Diccionario:** Abra su nuevo Data Asset y añada tantas filas como necesite. Asigne una etiqueta (ej. `Anim.Routine.Idle`) y ponga al lado el *Animation Montage* de su propio personaje.
+2. **Llenar el Diccionario:** Abra su nuevo Data Asset y añada tantas filas como necesite. Asigne una etiqueta (ej. `Anim.Reactions.Idle`) y añada en la lista *Animations Montages* de su propio personaje.
 3. **Equipar al Cerebro:** Vaya al Blueprint de su nuevo NPC. Seleccione su componente principal de comportamiento o variables y busque la ranura para el Data Asset de animación. Arrastre ahí el archivo que acaba de crear.
 
 **El resultado del flujo es instantáneo:** El State Tree dicta la lógica universal (Ej. "Has recibido un golpe, ejecuta la etiqueta `Anim.Hit`"). El NPC recibe la orden, consulta **su propio Data Asset**, encuentra la animación de dolor específica para su cuerpo, y la reproduce. No tendrá que reprogramar ni un solo nodo para añadir decenas de personajes distintos al juego.
