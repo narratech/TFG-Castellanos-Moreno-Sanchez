@@ -32,24 +32,31 @@
 Para inicializar el entorno de entrenamiento, es requisito indispensable tener instalado [Python](https://www.python.org/downloads/release/python-3144/).
 
 **Pasos de instalación:**
-> [!IMPORTANT]
-> (`poner enlace mas adelante del archivo comprimido`)
-1. Descargar el archivo comprimido del repositorio de GitHub y extraer su contenido en un directorio vacío.
+1. Descargar el [archivo comprimido](https://github.com/narratech/TFG-Castellanos-Sanchez/releases/tag/GRU_Trainer) del repositorio de GitHub y extraer su contenido en un directorio vacío.
 2. Navegar a la ruta `TFG-Castellanos-Sanchez\GRU` y ejecutar el script `import_dependencies.bat`. Este proceso generará automáticamente un entorno virtual dentro de la carpeta `venv`.
 3. Copiar el dataset propio (en formato `.csv` delimitado por comas) dentro del directorio `dataset`.
 
 ## 1.2 Instrucciones de Uso <a name="12-instrucciones-de-uso"></a>
 
 Una vez completada la instalación y generado el entorno virtual, proceda con los siguientes pasos desde el directorio `Castellanos-Sanchez\GRU`:
+> **Nota:** El fichero config.ini tiene unos valores predefinidos para el dataset proporcionado
 
 1. Abra el archivo de configuración `config.ini`.
-2. Cumplimente los datos requeridos en la sección **`[Dataset]`**.
-> [!IMPORTANT]
-> (Explicar algo mejor por si no se entiende lo de cumplimentar los datos requeridos)
+2. Localize la seccion `[Dataset]`.
+3. Rellene el campo `CSV_NAME` con el nombre del .csv dentro de la carpeta `dataset` con el que entrenará el modelo.
+4. (Opcional) Rellene el campo `TESTER_CSV_NAME` con el nombre del .csv  dentro de la carpeta `dataset` con el que el modelo hará pruebas.
+5. Rellene el campo `OUTPUT_NAMES` con los nombres de las columnas de salida del dataset separado por comas.
+6. Rellene el campo `SEQUENCE_LENGTH` con la longitud de secuencia con la que entrenará el modelo.
+7. Rellene el campo `BLOCK_SIZE` con longitud de entradas consecutivas en el tiempo dentro del dataset (Deben ser todos los bloques de la misma longitud).
+8. Ajuste los campos de las otras secciones para afinar el entrenamiento si fuera necesario.
+
+> **Nota:** `SEQUENCE_LENGTH` y `BLOCK_SIZE` pueden ser del mismo tamaño.
+
+> ⚠️ **Aviso:** No modifique los valores de los campos fuera de `[Dataset]` si no comprende completamente su función.
 
 El sistema permite dos modalidades de entrenamiento:
 * **Entrenamiento Directo:** Ejecutando [`gru_only.bat`](#gruonly).
-* **Entrenamiento con Autoencoder (Aumento de datos):** Ejecutando [`training.bat`](#training). *(Existe una configuración por defecto en las secciones `[Autoencoder]` y `[GRU]` del `config.ini` que puede ser modificada según las necesidades del proyecto).*
+* **Entrenamiento con Autoencoder (Aumento de datos):** Ejecutando [`Autoencoder_And_GRU.bat`](#autoencoderandgru). *(Existe una configuración por defecto en las secciones `[Autoencoder]` y `[GRU]` del `config.ini` que puede ser modificada según las necesidades del proyecto).*
 
 > **Nota:** En ambas modalidades, el sistema aplicará automáticamente la codificación *One-Hot* a las entradas correspondientes a las columnas categóricas.
 
@@ -65,7 +72,7 @@ Si desea validar el entrenamiento con nuevos datos empíricos:
 
 > **Nota de Diseño:** Para facilitar las pruebas y la integración, esta guía se apoya en los sistemas preconstruidos utilizados en nuestra **Demo1**. En lugar de programar la lógica desde cero, le guiaremos para implementar nuestras herramientas modulares. De esta forma, obtendrá una IA funcional de forma casi inmediata, comprendiendo en cada paso el funcionamiento interno del sistema.
 
-**Paso previo:** Copie el modelo generado (ubicado en la carpeta `models`) dentro del directorio `Content` de su proyecto de Unreal Engine.
+**Paso previo:** Copie los archivos gru_model.onnx y gru_model.onnx.data (ubicado en la carpeta `models`) dentro del directorio `Content` de su proyecto de Unreal Engine.
 
 ## 2.1 Preparación del entorno y navegación <a name="21-preparación-del-entorno-y-navegación"></a>
 
@@ -85,32 +92,42 @@ Se proporciona un actor preconfigurado (`DemoSandBoxCharacter_Mover`) ubicado en
 
 ## 2.3 Configuración del Cerebro (Componente EmotionAI) <a name="23-configuración-del-cerebro-componente-emotionai"></a>
 
-> [!IMPORTANT]
-> Revisar todo este apartado para adaptarlo para que en vez de que use directamente nuestro Test_EmotionIA, tengamos un blueprint donde tenga que ir metiendo o uniendo los nodos pero que en todo momento se le explique que hace para que entienda como funciona. Además debemos puntializar que en nuestra version hemos puesto variables para personalidad que deben instanciar en el editor, estaria bien darles algun ejemplo de personalidades a poner con una tabla o algo y explicarles rasgos de cada personalidad
+Para dotar al NPC de procesamiento emocional, utilize el componente de `EmotionAI`.
+Dispone de un Actor Blueprint de ejemplo parcialmente configurado en `Content/TFG-Castellanos-Sanchez/IA` llamado `Test_EmotionIA`. 
 
-Para dotar al NPC de procesamiento emocional, añada el componente **`EmotionIA`** al Blueprint del personaje (ubicado en el `source` del proyecto). *Importante: Aplíquelo en el Blueprint, no como instancia en el nivel.*
+> **Nota:** Los pasos de esta seccion son en base a un modelo entrenado con el dataset proporcionado.
 
-En el panel de detalles del componente:
-* Defina en **`Model Path`** la ruta y nombre del archivo de su modelo, utilizando la carpeta `Content` como raíz.
+Dentro del componente debe rellenar la variable Model Path a la ruta que contenga el modelo exportado en nuestro projecto tomando Content como raiz, tambien es necesario poner el nombre del archivo junto con la extension .onnx (en este caso seria algo como [RUTA MODELO]/gru_model.onnx).
 
 ![Configuración del Modelo](Imagenes/Guia_UE_1.png)
 
 ### Inferencias desde Blueprints
-Dispone de un Actor Blueprint de ejemplo ya configurado en `Content/TFG-Castellanos-Sanchez/IA` llamado `Test_EmotionIA`. 
-Utilice el nodo **`Run Inference`** dentro del Event Graph para realizar predicciones.
+Antes de realizar la inferencia debe agrupar los datos y vectorizar los que no sean numeros.
 
-* **Entrada:** Un vector de floats (`Array<float>`) con los parámetros de entrada.
-* **Salida:** Un diccionario de clave string y valor float con los nombres según el parámetro `OUTPUT_NAMES` del `config.ini`.
+Para ello, tome como ejemplo el Actor Blueprint `Test_EmotionIA` mencionado previamente y sigua una serie de pasos que resumiran el flujo de trabajo de este componente.
 
-![Nodo Run Inference](Imagenes/Guia_UE_5.png)
+* **Agrupacion de dato numéricos:** Crea una variable de tipo *Array<float>* llamado `ArrayCombinado` y establece como valor inicial los valores numericos ya combinados dentro del EventGraph tal y como se ve en la imagen.
 
-Para la conversión de valores categóricos, utilice el nodo **`One Hot Encode with Categories`** pasando como parámetros el *string* a codificar y un array con los valores posibles.
+![Array combinado](Imagenes/Guia_UE_2.png)
+
+Con esto tendrá todos los valores numéricos ya agrupados dentro de nuestro array.
+> **Nota:** Observe que el orden en el que aparecen los valores es el mismo que en el que aparecen dentro del dataset quitando los valores no numéricos.
+
+* **Añadir los valores no numéricos:** Recoge lo que hay en la variable *string* ya creada de `Ejecuta_Golpeo` y el *Array<string>* de `Ejecuta_Golpeo_Categories` y paselo al nodo `One Hot Encode with Categories`. La variable `Ejecuta_Golpeo_Categories` contiene todos los posible valores que puede tomar `Ejecuta_Golpeo` sin importar el orden ya que internamente se ordena alfabeticamente (en el entrenamiento tambien sigue esta regla).
+A continuación, añada a la variable `ArrayCombinado` el array de salida.
+
+![Nodo Run Inference](Imagenes/Guia_UE_3.png)
+
+Volver a realizar el mismo proceso con `Recibe_Golpeo` y `Recibe_Golpeo_Categories`.
+> **Nota:**  Observe que el orden de `Ejecuta_Golpeo` y `Recibe_Golpeo` tambien coincide con el del dataset si no tenemos en cuenta los valores numericos.
+
+* **Realizar la inferencia del modelo:** Use el nodo `Add Time Step` pasandole como parametro la variable `ArrayCombinado` y realize después una inferencia con `Run Inference`. El resultado de la inferencia será un diccionario de valores numericos que usarán como clave los nombres utilizados en `OUTPUT_NAMES` al entrenar el modelo.
 
 ![Nodo One Hot Encode](Imagenes/Guia_UE_4.png)
 
-> **Formato de los datos para la Inferencia:**
-> El vector debe contener primero los valores continuos/discretos y posteriormente los categóricos, respetando el orden del dataset.
-> *Ejemplo:* > `[DiscretoA, DiscretoB, CategoricoA, DiscretoC, CategoricoB]` **➜** `[DiscretoA, DiscretoB, DiscretoC, CategoricoA_1...CategoricoA_X, CategoricoB_1...CategoricoB_X]`
+> **Nota:** En lugar del nodo `Add Time Step` se puede usar el nodo `Change Time Step Table`, que en lugar de añadir un paso en el tiempo, permite establecer toda la tabla de pasos de tiempos (hay que asegurarse que la tabla es de tamaño Entradas * Sequencias).
+
+Para concluir, termine de enlazar la salida de `Run Inference` con el nodo `SET` de la variable `Emociones`.
 
 ## 2.4 Conexión con el Cerebro (Componente `BPC_PsicologyNPC`) <a name="24-conexion-con-el-cerebro"></a>
 
