@@ -127,18 +127,15 @@ Una vez añadido el componente, selecciónelo para ver su panel de Detalles. Enc
 * **Categoría *Predeterminado***
   * **`Test Emotio AI`:** Referencia directa al actor `Test_EmotionIA` de la escena, el cual contiene la red neuronal GRU encargada de calcular la inferencia.
 * **Categoría *Patrol Point***
-  * **`Actor To Follow`:** El actor o punto de ruta inicial hacia el que el NPC debe dirigirse al empezar la simulación.
-  * **`Escape Patrol Point` (Array):** Una lista de *Target Points* distribuidos por el mapa que el NPC utilizará como refugios aleatorios cuando el GRU detecte un nivel alto de miedo.
-  * **`Fire Patrol Point`:** Una ubicación segura predefinida relacionada con el clima (por ejemplo, una chimenea) a la que el NPC acudirá si la temperatura es desfavorable.
+  * **`Actor To Follow`:** El actor o punto de ruta inicial hacia el que el NPC debe dirigirse al empezar la simulación. Más adelante se explicará que se debe instanciar aquí.
+  * **`Escape Patrol Point` (Array):** Una lista de *Target Points* distribuidos por el mapa que el NPC utilizará como refugios aleatorios cuando el GRU detecte un nivel alto de miedo. Al igual que antes más adelante se explicará como instanciar dichos puntos. 
+  * **`Fire Patrol Point`:** Una ubicación segura predefinida relacionada con el clima (por ejemplo, una chimenea) a la que el NPC acudirá si la temperatura es desfavorable. Lo mismo que con las dos anteriores variables. 
 * **Categoría *Social***
-  * **`Social Memory` (Diccionario / Map):** ¡Vital para la interacción! Es un mapa que relaciona *Actores* reales del nivel con nuestro *Enum* `E_SocialRole` (Ej: El jugador = "Jugador", Otro NPC = "NPC1"). El componente utiliza esta memoria para saber a quién está viendo.
+  * **`Social Memory` (Diccionario / Map):** ¡Vital para la interacción! Es un mapa que relaciona *Actores* reales del nivel con nuestro *Enum* `E_SocialRole` (Ej: El jugador = "Jugador", Otro NPC = "NPC1"). El componente utiliza esta memoria para saber a quién está viendo. En este caso no hará falta hacer nada ya que al iniciar el nivel se instancian los valores según el rol escogido al jugar. 
 * **Categoría *Entorno***
   * **`Range`:** El radio de visión y consciencia del NPC (en unidades de Unreal).
 
 ### 2.4.2 Funcionamiento Interno (¿Qué hace este componente por usted?)
-
-> [!IMPORTANT]
-> Aclarar que esta parte si quieren se la pueden saltar, pero que esta bien saber como funcionar para comprender todo
 
 Si decide investigar el Blueprint por dentro, verá que hemos optimizado la arquitectura siguiendo estándares de la industria AAA:
 
@@ -169,12 +166,12 @@ Para reflejar físicamente las emociones procesadas:
 La IA reacciona dinámicamente a los estímulos. Para facilitar las pruebas, hemos incluido sistemas preconfigurados que actúan como "disparadores" para las emociones del NPC:
 
 ### Gestor Climático (`BP_WeatherManager`)
-> [!IMPORTANT]
-> Me falta explicar algunas varibales que debe poner en el editor
 
 Este Blueprint global controla el clima del nivel. Arrástrelo a su escena.
 * **¿Qué hace?** Modifica visualmente el entorno (nubes, lluvia, iluminación) y sirve de referencia global para todos los NPCs.
-* **Variables Clave:** * `Esta Lloviendo` (Booleano): Al activarse, los Evaluadores de la IA detectan el cambio de clima y el GRU ajusta las emociones, obligando al NPC a buscar refugio o calentarse.
+* **Variables Clave:**
+  * Particle System: es neceario agregarle el particle system de la lluvia llamado `Rain`.
+  * `Esta Lloviendo` (Booleano): Al activarse, los Evaluadores de la IA detectan el cambio de clima y el GRU ajusta las emociones, obligando al NPC a buscar refugio o calentarse.
   * Dispone de líneas de tiempo (Timelines) internas para controlar la intensidad de la precipitación.
 
 ### Objetos Interactuables (Ej. El Arma / Pistola)
@@ -238,6 +235,8 @@ Es un Blueprint muy ligero que actúa como una baliza o destino. Contiene lógic
 * Seleccione el **PatrolPoint**. En su pantalla abierta del `EUW_PatrolPoints`, dale a **`Next Patrol Point`** y verá que se crea otro punto.
 * Existe la opción de darle al boton de  **`Between Patrol Point`**, para ello deberá seleccionar un punto A y un punto C, creandose así un punto B. Por lo tanto el recorrido seria A -> B -> C y C -> B -> A
 * Para cerrar el circuito y crear un bucle infinito, en el Punto C seleccione de nuevo el Punto A.
+
+* En el punto 2.4.1 Variables Expuestas (Configuración en Editor) en las variables relacionadas con Patrol Points deciamos que más tarde se explicaría que instanciar. Pues ahora que sabemos que es un patrol point y como se crean en la escena, se recomienda poner varios puntos para la lista de Escape Patrol Points donde se crea que son buenos puntos de huida, como puede ser fuera de la casa. Una vez puestos se deberán instanciar en el editor en las variables de dicho apartado. Lo mismo haremos con el Fire Patrol Point, que sera el punto de la chimenea. En el caso de Actor to Follow se asignara el punto inicial de cada ruta creada, tiene que ser el primer puntos si o si. 
 
 **3. Personalización del comportamiento por punto:**
 En el panel de detalles de cada `BP_PatrolPoint` encontrará variables adicionales (como `WaitTime` o *Tiempo de espera*). Esto le permite crear un comportamiento orgánico: puede hacer que el NPC llegue a un punto y espere 5 segundos, pero que al llegar a otro punto continúe caminando inmediatamente (espera = 0). También hay una varibale de Gameplay Tag, para asignar un las animaciones que realizarán al llegar a dicho punto.
