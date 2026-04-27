@@ -268,10 +268,8 @@ Para resolver esto y hacer que nuestra IA sea escalable, la demo utiliza una arq
 
 **1. Las Etiquetas (Gameplay Tags)**
 Una *Gameplay Tag* es simplemente una etiqueta jerárquica (texto) que el motor reconoce globalmente. En lugar de decir "Reproduce Animación X", el State Tree ordena: *"Ejecuta la acción asociada a la etiqueta `Anim.Reaction.Scared`"*.
-> [!IMPORTANT]
-> Explicar mejor como asignar tags para que nuestro linked asset pueda reproducirlo en el play montage
 
-* *¿Cómo usarlo?* Si abre una Tarea de animación en nuestro State Tree (`STT_PlayMontage`), verá que hay un parámetro de entrada que pide un `GameplayTag`. Usted selecciona la etiqueta deseada de la lista desplegable. También existe la posibilidad de utilizar el Gameplay Tag asignado en el Patrol Point, por lo que al llegar a dicho punto realiza la animación. 
+* *¿Cómo usarlo?* Si abre el Sub-árbol `ST_NPC_Reactions` y vas al estado de `Reaction State` veras que la tarea `STT_PlayMontage`, es capaz de acceder a un data asset si el Gameplay Tag actual del NPC coincide con algun data asset contenido en la lista del NPC. Para establecer el Gameplay Tag actual al NPC tiene dos formas: usando una tarea en un estado anterior llamada `STT_InstanceTagReaction`, como puedes ver en nuestro arbol  `ST_NPC_Principal` hay un estado como `Threat State` que instacia el Gameplay Tag actual a `NPC.Reactions.ReactFlinch` de esta forma el Play Montage reproducirá las animaciones del data assets vinculado con ese tag. Otra forma es que acceda al Gameplay Tag del Patrol Point en el que esta ubicado y haga alguna animación en ese momento.
 
 **2. El Diccionario de Animaciones (Data Assets)**
 
