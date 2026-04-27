@@ -32,16 +32,20 @@
 Para inicializar el entorno de entrenamiento, es requisito indispensable tener instalado [Python](https://www.python.org/downloads/release/python-3144/).
 
 **Pasos de instalación:**
+> [!IMPORTANT]
+> (`poner enlace mas adelante del archivo comprimido`)
 1. Descargar el archivo comprimido del repositorio de GitHub y extraer su contenido en un directorio vacío.
 2. Navegar a la ruta `TFG-Castellanos-Sanchez\GRU` y ejecutar el script `import_dependencies.bat`. Este proceso generará automáticamente un entorno virtual dentro de la carpeta `venv`.
-3. Copiar el dataset (en formato `.csv` delimitado por comas) dentro del directorio `dataset`.
+3. Copiar el dataset propio (en formato `.csv` delimitado por comas) dentro del directorio `dataset`.
 
 ## 1.2 Instrucciones de Uso <a name="12-instrucciones-de-uso"></a>
 
-Una vez completada la instalación y generado el entorno virtual, proceda con los siguientes pasos desde el directorio `Castellanos-Moreno-Sanchez\GRU`:
+Una vez completada la instalación y generado el entorno virtual, proceda con los siguientes pasos desde el directorio `Castellanos-Sanchez\GRU`:
 
 1. Abra el archivo de configuración `config.ini`.
 2. Cumplimente los datos requeridos en la sección **`[Dataset]`**.
+> [!IMPORTANT]
+> (Explicar algo mejor por si no se entiende lo de cumplimentar los datos requeridos)
 
 El sistema permite dos modalidades de entrenamiento:
 * **Entrenamiento Directo:** Ejecutando `gru_only.bat`.
@@ -76,10 +80,13 @@ Se proporciona un actor preconfigurado (`DemoSandBoxCharacter_Mover`) ubicado en
 
 > **Personalización del NPC (MetaHuman)**
 > Por defecto, el actor integra un MetaHuman y componentes de prueba. Debe personalizarlo asignando su propio MetaHuman modificando el *Skeletal Mesh* en el componente `VisualOverride`.
-> 1. Para crear un modelo personalizado, consulte el [Video tutorial de MetaHuman Creator](https://youtu.be/2M22x-Jm4WE) (o utilice los modelos incluidos en el `.zip` de la carpeta Content).
+> 1. Para crear un modelo personalizado, consulte el [Video tutorial de MetaHuman Creator](https://youtu.be/2M22x-Jm4WE) (o utilice los modelos incluidos en el `.zip` de la carpeta Content/Metahuman).
 > 2. Acceda al componente `Visual Override` del actor, localice el parámetro `Child Actor` y asigne el Blueprint de su MetaHuman.
 
 ## 2.3 Configuración del Cerebro (Componente EmotionAI) <a name="23-configuración-del-cerebro-componente-emotionai"></a>
+
+> [!IMPORTANT]
+> Revisar todo este apartado para adaptarlo para que en vez de que use directamente nuestro Test_EmotionIA, tengamos un blueprint donde tenga que ir metiendo o uniendo los nodos pero que en todo momento se le explique que hace para que entienda como funciona. Además debemos puntializar que en nuestra version hemos puesto variables para personalidad que deben instanciar en el editor, estaria bien darles algun ejemplo de personalidades a poner con una tabla o algo y explicarles rasgos de cada personalidad
 
 Para dotar al NPC de procesamiento emocional, añada el componente **`EmotionIA`** al Blueprint del personaje (ubicado en el `source` del proyecto). *Importante: Aplíquelo en el Blueprint, no como instancia en el nivel.*
 
@@ -114,6 +121,9 @@ Para implementarlo, simplemente abra el Blueprint de su personaje (ej. `DemoSand
 ### 2.4.1 Variables Expuestas (Configuración en Editor)
 Una vez añadido el componente, selecciónelo para ver su panel de Detalles. Encontrará una serie de variables públicas que debe configurar directamente en el editor del nivel para cada NPC instanciado:
 
+> [!IMPORTANT]
+> Aclarar que algunas variables todavia no puede ser metidas pq se iran expplicando más adelante
+
 * **Categoría *Predeterminado***
   * **`Test Emotio AI`:** Referencia directa al actor `Test_EmotionIA` de la escena, el cual contiene la red neuronal GRU encargada de calcular la inferencia.
 * **Categoría *Patrol Point***
@@ -126,6 +136,9 @@ Una vez añadido el componente, selecciónelo para ver su panel de Detalles. Enc
   * **`Range`:** El radio de visión y consciencia del NPC (en unidades de Unreal).
 
 ### 2.4.2 Funcionamiento Interno (¿Qué hace este componente por usted?)
+
+> [!IMPORTANT]
+> Aclarar que esta parte si quieren se la pueden saltar, pero que esta bien saber como funcionar para comprender todo
 
 Si decide investigar el Blueprint por dentro, verá que hemos optimizado la arquitectura siguiendo estándares de la industria AAA:
 
@@ -156,12 +169,18 @@ Para reflejar físicamente las emociones procesadas:
 La IA reacciona dinámicamente a los estímulos. Para facilitar las pruebas, hemos incluido sistemas preconfigurados que actúan como "disparadores" para las emociones del NPC:
 
 ### Gestor Climático (`BP_WeatherManager`)
+> [!IMPORTANT]
+> Me falta explicar algunas varibales que debe poner en el editor
+
 Este Blueprint global controla el clima del nivel. Arrástrelo a su escena.
 * **¿Qué hace?** Modifica visualmente el entorno (nubes, lluvia, iluminación) y sirve de referencia global para todos los NPCs.
 * **Variables Clave:** * `Esta Lloviendo` (Booleano): Al activarse, los Evaluadores de la IA detectan el cambio de clima y el GRU ajusta las emociones, obligando al NPC a buscar refugio o calentarse.
   * Dispone de líneas de tiempo (Timelines) internas para controlar la intensidad de la precipitación.
 
 ### Objetos Interactuables (Ej. El Arma / Pistola)
+> [!IMPORTANT]
+> Revisar si en la demo 2 la pistola ya esta, sino hay que indicarle que la debe mover al nivel 
+
 Dentro de la demo encontrará objetos interactuables diseñados para alterar el comportamiento del NPC.
 * **Uso del Arma:** El jugador puede interactuar con el arma (pulsando la tecla `E` para recogerla/equiparla). Al hacer clic, el arma apuntará.
 * **Impacto en la IA:** El NPC cuenta con conos de visión. Si el jugador entra en su campo de visión con el arma equipada, el estado de amenaza (`IsReaction`) se vuelve verdadero. El modelo GRU procesará un aumento drástico del miedo, lo que obligará al NPC a interrumpir sus tareas y huir al punto de escape más lejano.
@@ -181,7 +200,7 @@ Define sobre "quién" se está ejecutando el árbol. Automáticamente, toma como
 
 **2. Parámetros del Árbol (Parameters)**
 Son variables internas que actúan como la memoria a corto plazo de la IA. Por ejemplo:
-* `RangeToEscapePistol` *(Float)*: La distancia (ej. 200.0) a la que el NPC considera que la pistola está lo suficientemente lejos como para sentirse a salvo.
+* `RangeToEscapePistol` *(Float)*: La distancia (ej. 200.0) a la que el NPC considera que la pistola está lo suficientemente lejos como para sentirse a salvo, o huir o reaccionar de cerca.
 * `Out_ReactionSequence` *(Booleano)*: Guarda si la secuencia de animaciones del data asset se quiere ejecutar en secuencia (true) o si solo se quiere ejecutar una animación random de la secuencia (false)
 * `HasPlayedIntroReaction` *(Booleano)*: Una memoria para evitar que el NPC repita la animación inicial de, por ejemplo "susto", si el jugador no deja de apuntarle.
 
@@ -249,9 +268,15 @@ Para resolver esto y hacer que nuestra IA sea escalable, la demo utiliza una arq
 
 **1. Las Etiquetas (Gameplay Tags)**
 Una *Gameplay Tag* es simplemente una etiqueta jerárquica (texto) que el motor reconoce globalmente. En lugar de decir "Reproduce Animación X", el State Tree ordena: *"Ejecuta la acción asociada a la etiqueta `Anim.Reaction.Scared`"*.
+> [!IMPORTANT]
+> Explicar mejor como asignar tags para que nuestro linked asset pueda reproducirlo en el play montage
+
 * *¿Cómo usarlo?* Si abre una Tarea de animación en nuestro State Tree (`STT_PlayMontage`), verá que hay un parámetro de entrada que pide un `GameplayTag`. Usted selecciona la etiqueta deseada de la lista desplegable. También existe la posibilidad de utilizar el Gameplay Tag asignado en el Patrol Point, por lo que al llegar a dicho punto realiza la animación. 
 
 **2. El Diccionario de Animaciones (Data Assets)**
+> [!IMPORTANT]
+> En este apartado debo cambiar los nombres de los ejemplos por los verdaderos
+
 Para que el NPC sepa qué animación física corresponde a esa etiqueta, utilizamos un **Data Asset**. Funciona como un diccionario de traducción personal de cada personaje.
 * En el directorio del proyecto, encontrará Data Assets creados a partir de una clase personalizada (ej. `DA_AnimationMap`).
 * Si abre uno de estos Data Assets, verá una lista (Map) que empareja una clave con un valor:
