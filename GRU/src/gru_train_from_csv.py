@@ -54,6 +54,7 @@ OUTPUT_SIZE = len(OUTPUT_COLUMNS)
 
 # Crea el directorio si no existe
 os.makedirs("models", exist_ok=True)
+os.makedirs("graphs", exist_ok=True)
 
 
 # ============================================================
@@ -143,6 +144,7 @@ def train_gru(device, dataset, loader):
     model = GRUEmotionModel(input_size).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     loss_fn = nn.MSELoss()
+    epoch_losses = []
 
     print("▶ Entrenando GRU")
 
@@ -156,6 +158,9 @@ def train_gru(device, dataset, loader):
             optimizer.step()
             loss_total += loss.item()
 
+        avg_loss = loss_total / len(loader)
+        epoch_losses.append(avg_loss)
+
         if (epoch + 1) % 10 == 0:
             print(f"GRU Epoch {epoch+1}/{EPOCHS} - Loss {loss_total:.4f}")
 
@@ -163,6 +168,17 @@ def train_gru(device, dataset, loader):
     torch.save(model.state_dict(), "models/gru_model.pth")
 
     print("✅ GRU supervisado guardado en models/gru_model.pth")
+
+    # Guardar losses en CSV
+    loss_df = pd.DataFrame({
+        "epoch": list(range(1, EPOCHS + 1)),
+        "loss": epoch_losses
+    })
+
+    loss_path = "models/gru_training_log.csv"
+    loss_df.to_csv(loss_path, index=False)
+
+    print(f"📊 Loss guardado en {loss_path}")
 
     return model
 
@@ -221,7 +237,7 @@ def evaluate(model, loader, device):
     plt.colorbar()
     plt.xlabel("Predicción")
     plt.ylabel("Real")
-    plt.show()
+    plt.savefig("graphs/ConfusionMatrix.png")
 
 # ============================================================
 # 📁 EXPORTAR A ONNX

@@ -39,6 +39,9 @@ N_SYNTHETIC = int(config['Autoencoder']['N_SYNTHETIC'])
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# Crea el directorio si no existe
+os.makedirs("graphs", exist_ok=True)
+
 # =========================================================
 # CARGA DE DATOS
 # =========================================================
@@ -289,7 +292,7 @@ def plot_latentes(latents, Y):
     plt.xlabel("Componente 1")
     plt.ylabel("Componente 2")
 
-    plt.show()
+    plt.savefig("graphs/LatentsPlot.png")
 
 # =========================================================
 # MAIN
