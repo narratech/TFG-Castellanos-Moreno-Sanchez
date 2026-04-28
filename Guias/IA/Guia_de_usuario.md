@@ -58,13 +58,15 @@ El sistema permite dos modalidades de entrenamiento:
 * **Entrenamiento Directo:** Ejecutando [`gru_only.bat`](#gruonly).
 * **Entrenamiento con Autoencoder (Aumento de datos):** Ejecutando [`Autoencoder_And_GRU.bat`](#autoencoderandgru). *(Existe una configuración por defecto en las secciones `[Autoencoder]` y `[GRU]` del `config.ini` que puede ser modificada según las necesidades del proyecto).*
 
+Tras el entrenamiento, el modelo generado se ubicará en la carpeta `models`, quedando listo para su integración en Unreal Engine.
+
 > **Nota:** En ambas modalidades, el sistema aplicará automáticamente la codificación *One-Hot* a las entradas correspondientes a las columnas categóricas.
 
 ### Pruebas y Validación (Testeo)
 Si desea validar el entrenamiento con nuevos datos empíricos:
 1. Añada los nuevos datos en un archivo llamado `realset.csv` dentro del directorio `dataset`.
 2. Ejecute el script [`testeo.bat`](#testeo) (requiere haber generado previamente el modelo).
-3. Tras la validación, el modelo generado se ubicará en la carpeta `models`, quedando listo para su integración en Unreal Engine.
+3. Hay mas información del entrenamiento y validación dentro de la carpeta `graphs`.
 
 ---
 
