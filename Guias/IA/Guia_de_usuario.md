@@ -71,6 +71,8 @@ Si desea validar el entrenamiento con nuevos datos empíricos:
 ---
 
 # 2. Guía de instalación del Plugin en Unreal Engine <a name="2-guía-de-instalación-del-plugin-en-unreal-engine"></a>
+> **Nota:**
+> Como todavia no se ha podido completar la creado del plugin para la carpetas de Plugins de Unreal, trabajaremos desde el proyecto del repositorio
 
 > **Nota de Diseño:** Para facilitar las pruebas y la integración, esta guía se apoya en los sistemas preconstruidos utilizados en nuestra **Demo1**. En lugar de programar la lógica desde cero, le guiaremos para implementar nuestras herramientas modulares. De esta forma, obtendrá una IA funcional de forma casi inmediata, comprendiendo en cada paso el funcionamiento interno del sistema.
 
@@ -115,6 +117,9 @@ Para ello, tome como ejemplo el Actor Blueprint `Test_EmotionIA` mencionado prev
 Con esto tendrá todos los valores numéricos ya agrupados dentro de nuestro array.
 > **Nota:** Observe que el orden en el que aparecen los valores es el mismo que en el que aparecen dentro del dataset quitando los valores no numéricos.
 
+> [!IMPORTANT]
+> Sobre el origen de los datos: Tenga en cuenta que en este paso únicamente se está enseñando a configurar la estructura de entrada en el Blueprint del modelo de IA. Más adelante verás como sacamos y seteamos dichos valores. Pero en un entorno de juego real, usted será el responsable de programar la extracción de estos datos del entorno (por ejemplo: calcular la distancia al jugador, leer la vida actual del NPC o comprobar si es de día/noche) e inyectar ("setear") dichos valores dinámicos en las variables de este Blueprint justo antes de ejecutar la inferencia.
+
 * **Añadir los valores no numéricos:** Recoge lo que hay en la variable *string* ya creada de `Ejecuta_Golpeo` y el *Array<string>* de `Ejecuta_Golpeo_Categories` y paselo al nodo `One Hot Encode with Categories`. La variable `Ejecuta_Golpeo_Categories` contiene todos los posible valores que puede tomar `Ejecuta_Golpeo` sin importar el orden ya que internamente se ordena alfabeticamente (en el entrenamiento tambien sigue esta regla).
 A continuación, añada a la variable `ArrayCombinado` el array de salida.
 
@@ -147,7 +152,9 @@ Una vez añadido el componente, selecciónelo para ver su panel de Detalles. Enc
   * **`Escape Patrol Point` (Array):** Una lista de *Target Points* distribuidos por el mapa que el NPC utilizará como refugios aleatorios cuando el GRU detecte un nivel alto de miedo. Al igual que antes más adelante se explicará como instanciar dichos puntos. 
   * **`Fire Patrol Point`:** Una ubicación segura predefinida relacionada con el clima (por ejemplo, una chimenea) a la que el NPC acudirá si la temperatura es desfavorable. Lo mismo que con las dos anteriores variables. 
 * **Categoría *Social***
-  * **`Social Memory` (Diccionario / Map):** ¡Vital para la interacción! Es un mapa que relaciona *Actores* reales del nivel con nuestro *Enum* `E_SocialRole` (Ej: El jugador = "Jugador", Otro NPC = "NPC1"). El componente utiliza esta memoria para saber a quién está viendo. En este caso no hará falta hacer nada ya que al iniciar el nivel se instancian los valores según el rol escogido al jugar. 
+  * **`Social Memory` (Diccionario / Map):** ¡Vital para la interacción! Es un mapa que relaciona *Actores* reales del nivel con nuestro *Enum* `E_SocialRole` (Ej: El jugador = "Jugador", Otro NPC = "NPC1"). El componente utiliza esta memoria para saber a quién está viendo. En este caso no hará falta hacer nada ya que al iniciar el nivel se instancian los valores según el rol escogido al jugar.
+    *  **⚠️ Implementación en tu proyecto:** Para que el NPC reconozca a otros actores, **debes rellenar este diccionario por código o Blueprints** (usando el nodo `Add` de Mapas) pasándole la referencia del actor y el rol que quieras asignarle.
+    * *💡 Ejemplo de arquitectura (Cómo lo hacemos en nuestra Demo):* Nosotros utilizamos un `Game Instance` para guardar el rol elegido por el jugador en el menú principal. Luego, al cargar la escena, utilizamos el *Construction Script* o el *BeginPlay* del Blueprint del Nivel para recuperar ese rol y hacer un `Add` en la `Social Memory` de cada NPC, registrando al jugador. Puedes replicar este sistema o crear tu propio "Manager" que registre estas relaciones al inicio de la partida. 
 * **Categoría *Entorno***
   * **`Range`:** El radio de visión y consciencia del NPC (en unidades de Unreal).
 
@@ -246,7 +253,7 @@ Este sistema permite al diseñador de niveles crear rutas complejas de forma vis
 Es un Blueprint muy ligero que actúa como una baliza o destino. Contiene lógica interna para decirle al NPC hacia dónde debe ir después y cuánto tiempo debe descansar al llegar.
 
 **2. Cómo crear un circuito de patrulla en su nivel:**
-* Vaya a la carpeta `Content/TFG-Castellanos-Moreno-Sanchez\Editor`y abra el archivo `EUW_PatrolPoints` y corra el widget del editor, esto abrirá una ventana para ir creando PatrolPoints a partir del seleccionado.
+* Vaya a la carpeta `Content/TFG-CastellanosSanchez\Editor`y abra el archivo `EUW_PatrolPoints` y para ejecutar un Editor Utility Widget hay que hacer clic sobre "Run Editor Utility Widget", esto abrirá una ventana para ir creando PatrolPoints a partir del seleccionado.
 * Vaya a la carpeta `Content/TFG_CastellanosSanchez/Blueprints/AI` y arrastre un **`BP_PatrolPoint`** a su escena.
 * Seleccione el **PatrolPoint**. En su pantalla abierta del `EUW_PatrolPoints`, dale a **`Next Patrol Point`** y verá que se crea otro punto.
 * Existe la opción de darle al boton de  **`Between Patrol Point`**, para ello deberá seleccionar un punto A y un punto C, creandose así un punto B. Por lo tanto el recorrido seria A -> B -> C y C -> B -> A
@@ -349,7 +356,7 @@ A continuación se detalla la documentación técnica avanzada sobre los paráme
 
 ## 3.2 Referencia de Scripts de Ejecución <a name="32-referencia-de-scripts-de-ejecución"></a>
 
-### `training.bat`<a name="training"></a>  
+### `Autoencoder_And_GRU.bat`<a name="autoencoderandgru"></a>  
 Script principal de pipeline para generación de datos y entrenamiento:
 * Genera casos de prueba sintéticos a partir del dataset original.
 * Aplica codificación *One-Hot* automáticamente a las columnas categóricas.
