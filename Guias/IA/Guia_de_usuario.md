@@ -136,7 +136,9 @@ Volver a realizar el mismo proceso con las variables `Recibe_Golpeo` y `Recibe_G
 
 Para concluir, termine de enlazar la salida de `Run Inference` con el nodo `SET` de la variable `Emociones`.
 
-[Imagen del blueprint final]
+![Result1](Imagenes/ResultadoAI1.png)
+
+![Result2](Imagenes/ResultadoAI2.png)
 
 ## 2.4 Conexión con el Cerebro (Componente `BPC_PsicologyNPC`) <a name="24-conexion-con-el-cerebro"></a>
 
@@ -214,11 +216,9 @@ Este Blueprint global controla el clima del nivel. Arrástrelo a su escena.
   * `Esta Lloviendo` (Booleano): Al activarse, los Evaluadores de la IA detectan el cambio de clima y el GRU ajusta las emociones, obligando al NPC a buscar refugio o calentarse.
   
 ### Objetos Interactuables (Ej. El Arma / Pistola)
-> [!IMPORTANT]
-> Revisar si en la demo 2 la pistola ya esta, sino hay que indicarle que la debe mover al nivel 
 
 Dentro de la demo encontrará objetos interactuables diseñados para alterar el comportamiento del NPC.
-* **Uso del Arma:** El jugador puede interactuar con el arma (pulsando la tecla `E` para recogerla/equiparla). Al hacer clic, el arma apuntará.
+* **Uso del Arma:** El jugador deberá arrastra el arma de la ruta `TFG-Castellanos-Sanchez/Blueprints/Interactables`, luego durante el juego podrá interactuar con el arma (pulsando la tecla `E` para recogerla/equiparla). Al hacer clic, el arma apuntará.
 * **Impacto en la IA:** El NPC cuenta con conos de visión. Si el jugador entra en su campo de visión con el arma equipada, el estado de amenaza (`IsReaction`) se vuelve verdadero. El modelo GRU procesará un aumento drástico del miedo, lo que obligará al NPC a interrumpir sus tareas y huir al punto de escape más lejano.
 
 
