@@ -14,7 +14,7 @@ Para entrenar el modelo
 
 7) Poner el tamaño del bloque del dataset en BLOCK_SIZE.
 
-8) Usar training.bat o gru_onehot.bat.
+8) Usar Autoencoder_And_GRU.bat o gru_onehot.bat.
 
 
 

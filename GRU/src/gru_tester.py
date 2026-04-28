@@ -10,7 +10,8 @@ import torch
 import torch.nn as nn
 import pandas as pd
 import numpy as np
-from torch.utils.data import Dataset, DataLoader
+import matplotlib.pyplot as plt
+from torch.utils.data import Dataset, DataLoader, random_split
 from scipy.stats import pearsonr
 from onehot_loader import cargar_csv_onehot
 
@@ -28,6 +29,7 @@ config.read('config.ini')
 CSV_PATH = os.path.join("dataset", config['Dataset']['TESTER_CSV_NAME'])
 MODEL_PATH = "models/gru_model.pth"
 CSV_OUTPUT = "dataset/predicted.csv"
+LOSS_PATH = "models/gru_training_log.csv"
 
 SEQUENCE_LENGTH = int(config['Dataset']['SEQUENCE_LENGTH'])
 FRAME_SIZE = int(config['Dataset']['BLOCK_SIZE'])
@@ -42,6 +44,9 @@ ONEHOT = args.onehot
 
 OUTPUT_COLUMNS = list(map(str, config['Dataset']['OUTPUT_NAMES'].split(',')))
 OUTPUT_SIZE = len(OUTPUT_COLUMNS)
+
+# Crea el directorio si no existe
+os.makedirs("graphs", exist_ok=True)
 
 # ============================================================
 # 📊 DATASET
@@ -111,6 +116,18 @@ class GRUEmotionModel(nn.Module):
         _, h = self.gru(x)
         h = h[-1]
         return self.fc(h)
+    
+def compute_loss(model, loader, device):
+    model.eval()
+    loss_fn = nn.MSELoss()
+    total = 0
+
+    with torch.no_grad():
+        for x, y in loader:
+            x, y = x.to(device), y.to(device)
+            total += loss_fn(model(x), y).item()
+
+    return total / len(loader)
 
 # ============================================================
 # 📊 EVALUACIÓN
@@ -179,6 +196,63 @@ def save_predictions_csv(model, loader, device):
     df.to_csv(CSV_OUTPUT, index=False)
     print(f"✅ Predicciones guardadas en {CSV_OUTPUT}")
 
+def analyze_training_loss():
+    if not os.path.exists(LOSS_PATH):
+        print("⚠️ No se encontró el archivo de losses")
+        return
+
+    df = pd.read_csv(LOSS_PATH)
+
+    losses = df["loss"].values
+
+    print("\n📉 Análisis de convergencia (training):")
+
+    print(f"Loss inicial: {losses[0]:.6f}")
+    print(f"Loss final:   {losses[-1]:.6f}")
+
+    # ↓ tendencia general
+    if losses[-1] < losses[0]:
+        print("✅ El modelo ha aprendido (loss decreciente)")
+    else:
+        print("⚠️ El modelo no está convergiendo correctamente")
+
+    # ↓ estabilidad (últimas épocas)
+    last_losses = losses[-10:] if len(losses) >= 10 else losses
+    std_dev = np.std(last_losses)
+
+    print(f"Variación últimas épocas: {std_dev:.6f}")
+
+    if std_dev < 1e-4:
+        print("✅ Convergencia estable")
+    else:
+        print("⚠️ El modelo aún oscila (posible falta de convergencia)")
+
+    plt.figure()
+    plt.plot(losses)
+    plt.title("Training Loss (Convergencia)")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.savefig("graphs/Convergence.png")
+
+def diagnose_model(model, train_loader, val_loader, device):
+
+    train_loss = compute_loss(model, train_loader, device)
+    val_loss = compute_loss(model, val_loader, device)
+
+    print("\n📉 Diagnóstico del modelo:")
+
+    print(f"Train loss: {train_loss:.6f}")
+    print(f"Val loss:   {val_loss:.6f}")
+    if val_loss > train_loss * 1.2:
+        print("⚠️ POSIBLE OVERFITTING: el modelo no generaliza bien")
+
+    # Underfitting
+    elif train_loss > 0.05 and val_loss > 0.05:
+        print("⚠️ POSIBLE UNDERFITTING: el modelo no aprende bien")
+
+    # Buen modelo
+    else:
+        print("✅ Modelo con buen equilibrio")
 
 # ============================================================
 # 🏁 MAIN
@@ -202,6 +276,16 @@ if __name__ == "__main__":
             SEQUENCE_LENGTH,
             FRAME_SIZE
         )
+
+    dataset_size = len(dataset)
+
+    train_size = int(0.8 * dataset_size)
+    val_size = dataset_size - train_size
+
+    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
     loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     # Modelo
@@ -212,4 +296,6 @@ if __name__ == "__main__":
 
     # Evaluación
     evaluate(model, loader, device)
+    diagnose_model(model, train_loader, val_loader, device)
+    analyze_training_loss()
     save_predictions_csv(model, loader, device)
