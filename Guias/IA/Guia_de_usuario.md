@@ -181,12 +181,15 @@ El código busca a estos actores dentro de su **`Social Memory`** (el diccionari
 Para reflejar físicamente las emociones procesadas:
 
 1. Navegue a `Content/TFG_CastellanosSanchez/Blueprints/ExpresionFacial` e inserte el actor **`BP_AnimationSystem`** en el nivel.
+   
 ![Variables AS](Imagenes/VariablesBP_AS.png)
+
 2. Seleccione el actor, busque la variable **`Metahuman Actor`** en Detalles y asigne el NPC creado en el paso 2.2 mediante el cuentagotas.
 3. Active la variable **`Use Emotion`** para habilitar la deformación facial en tiempo real.
 4. Envíe el mapa de emociones (salida del nodo `Run Inference` del paso 2.3) al actor `BP_AnimationSystem`. A continuación se muestra un ejemplo de implementación:
 
 ![Set Emotions](Imagenes/ConectorSetEmotions.png)
+
 ![Set Emotions](Imagenes/SetEmotions.png)
 *(Donde `Animation Actor` es una referencia a la instancia de `BP_AnimationSystem`)*.
 
@@ -198,7 +201,9 @@ La IA reacciona dinámicamente a los estímulos. Para facilitar las pruebas, hem
 
 Este Blueprint global controla el clima del nivel. Arrástrelo a su escena.
 * **¿Qué hace?** Modifica visualmente el entorno (nubes, lluvia, iluminación) y sirve de referencia global para todos los NPCs.
+
 ![Variables WM](Imagenes/VariablesBP_WM.png)
+
 * **Variables Clave:**
   * Hora de Lluvia: indicar la hora a la que quiere que empiece a llover, los tiempos van de 0 a 2400 (por ejemplo las 16 seria el valor 1600)
   * Hora Fin LLuvia: indicar la hora a la que se termine la lluvia.
@@ -273,7 +278,9 @@ Es un Blueprint muy ligero que actúa como una baliza o destino. Contiene lógic
 * En el punto 2.4.1 Variables Expuestas (Configuración en Editor) en las variables relacionadas con Patrol Points deciamos que más tarde se explicaría que instanciar. Pues ahora que sabemos que es un patrol point y como se crean en la escena, se recomienda poner varios puntos para la lista de Escape Patrol Points donde se crea que son buenos puntos de huida, como puede ser fuera de la casa. Una vez puestos se deberán instanciar en el editor en las variables de dicho apartado. Lo mismo haremos con el Fire Patrol Point, que sera el punto de la chimenea. En el caso de Actor to Follow se asignara el punto inicial de cada ruta creada, tiene que ser el primer puntos si o si. 
 
 **3. Personalización del comportamiento por punto:**
+
 ![Variables Patrol](Imagenes/VariablesBP_Patrol.png)
+
 En el panel de detalles de cada `BP_PatrolPoint` encontrará variables adicionales (como `WaitTime` o *Tiempo de espera*). Esto le permite crear un comportamiento orgánico: puede hacer que el NPC llegue a un punto y espere 5 segundos, pero que al llegar a otro punto continúe caminando inmediatamente (espera = 0). También hay una varibale de Gameplay Tag, para asignar un las animaciones que realizarán al llegar a dicho punto. Por último encontrará la variable `Want Anim Sequence` que si se activa hará que la secuencia de animaciones correspodiente a dicho Patrol Point se realice una detras de otra en vez de elegir solo una animación random de la lista. 
 
 ### 2.7.3 Modularidad: Linked Assets (Sub-Árboles)
@@ -291,7 +298,9 @@ Un Linked Asset funciona como una "Caja Negra" a la que hay que inyectarle datos
 * **`LoopStartIndexInSequence` (Entero) y `HasPlayedIntro` (Booleano):** Si se ha elegido que se va a realizar el diccionario de animaciones en secuencia, es posible que en dicha secuencia no se quiera repetir la animación inicial, ya sea porque es un susto y solo quieres que se haga la primera vez. Para ello es necesario pasar un entero para ver a partir de que animación realizas el bucle de la secuencia, y poner el booleano a true para saber que la animación incial ya se ha ejecutado una vez y quieres partir del indice establecido en `LoopStartIndexInSequence`.
 
 **Jerarquía Interna del Linked Asset:**
+
 ![SubArbol](Imagenes/SubArbol.png)
+
 Una vez inyectados estos parámetros, el Sub-árbol elige internamente qué hacer evaluando dichas condiciones:
 1.  **`Run State`:** Se ejecuta inmediatamente `Si Parameters.bShouldRun es True`.
 2.  **`Reaction State`:** Se ejecuta `Si Parameters.bIsReaction es True` (y la anterior fue falsa). Llama a la tarea interna de reproducir las animaciones alimentándola con las tags recibidas.
@@ -322,6 +331,7 @@ Si usted quiere añadir nuevas animaciones o crear un NPC completamente nuevo co
 1. **Crear su Diccionario:** Haga clic derecho en el Content Browser > *Miscellaneous* > *Data Asset*. Seleccione la clase de mapeo de animaciones que proporcionamos.
 2. **Llenar el Diccionario:** Abra su nuevo Data Asset y añada tantas filas como necesite. Asigne una etiqueta (ej. `Anim.Reactions.Idle`) y añada en la lista *Animations Montages* de su propio personaje.
 3. **Equipar al Cerebro:** Vaya al Blueprint de su nuevo NPC. Seleccione su componente principal de comportamiento o variables y busque la ranura para el Data Asset de animación. Arrastre ahí el archivo que acaba de crear.
+
 ![DataAsset](Imagenes/DataAssetAnim.png)
 
 **El resultado del flujo es instantáneo:** El State Tree dicta la lógica universal (Ej. "Has recibido un golpe, ejecuta la etiqueta `Anim.Hit`"). El NPC recibe la orden, consulta **su propio Data Asset**, encuentra la animación de dolor específica para su cuerpo, y la reproduce. No tendrá que reprogramar ni un solo nodo para añadir decenas de personajes distintos al juego.
