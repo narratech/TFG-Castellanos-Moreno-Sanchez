@@ -121,11 +121,11 @@ Con esto tendrá todos los valores numéricos ya agrupados dentro de nuestro arr
 > Sobre el origen de los datos: Tenga en cuenta que en este paso únicamente se está enseñando a configurar la estructura de entrada en el Blueprint del modelo de IA. Más adelante verás como sacamos y seteamos dichos valores. Pero en un entorno de juego real, usted será el responsable de programar la extracción de estos datos del entorno (por ejemplo: calcular la distancia al jugador, leer la vida actual del NPC o comprobar si es de día/noche) e inyectar ("setear") dichos valores dinámicos en las variables de este Blueprint justo antes de ejecutar la inferencia.
 
 * **Añadir los valores no numéricos:** Recoge lo que hay en la variable *string* ya creada de `Ejecuta_Golpeo` y el *Array<string>* de `Ejecuta_Golpeo_Categories` y paselo al nodo `One Hot Encode with Categories`. La variable `Ejecuta_Golpeo_Categories` contiene todos los posible valores que puede tomar `Ejecuta_Golpeo` sin importar el orden ya que internamente se ordena alfabeticamente (en el entrenamiento tambien sigue esta regla).
-A continuación, añada a la variable `ArrayCombinado` el array de salida.
+A continuación, añada a la variable `ArrayCombinado` el array obtenido mediante un nodo `APPEND`.
 
 ![Nodo Run Inference](Imagenes/Guia_UE_3.png)
 
-Volver a realizar el mismo proceso con `Recibe_Golpeo` y `Recibe_Golpeo_Categories`.
+Volver a realizar el mismo proceso con las variables `Recibe_Golpeo` y `Recibe_Golpeo_Categories`.
 > **Nota:**  Observe que el orden de `Ejecuta_Golpeo` y `Recibe_Golpeo` tambien coincide con el del dataset si no tenemos en cuenta los valores numericos.
 
 * **Realizar la inferencia del modelo:** Use el nodo `Add Time Step` pasandole como parametro la variable `ArrayCombinado` y realize después una inferencia con `Run Inference`. El resultado de la inferencia será un diccionario de valores numericos que usarán como clave los nombres utilizados en `OUTPUT_NAMES` al entrenar el modelo.
