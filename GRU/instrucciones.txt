@@ -23,3 +23,5 @@ Si se quiere comprobar el entrenamiento.
 1) Abrir el archivo config.ini, ir al apartado dataset y poner el nombre del archivo .csv con nuevos datos en TESTER_CSV_NAME.
 
 2) Usar testeo.bat para comprobar la precisión y coorelaccion del modelo con los nuevos datos.
+
+3) En la carpeta graphs hay graficas con mas información.
