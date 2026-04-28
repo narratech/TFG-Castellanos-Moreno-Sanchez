@@ -192,7 +192,7 @@ Para reflejar físicamente las emociones procesadas:
 
 ![Set Emotions](Imagenes/ConectorSetEmotions.png)
 
-![Set Emotions](Imagenes/SetEmotions.png)
+![Set Emotions](Imagenes/SetEmotion.png)
 *(Donde `Animation Actor` es una referencia a la instancia de `BP_AnimationSystem`)*.
 
 ## 2.6 Interacción y Control del Entorno (Variables Dinámicas) <a name="26-interaccion-control-del-entorno"></a>
