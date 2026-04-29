@@ -49,14 +49,16 @@ Una vez completada la instalación y generado el entorno virtual, proceda con lo
 6. Rellene el campo `SEQUENCE_LENGTH` con la longitud de secuencia con la que entrenará el modelo.
 7. Rellene el campo `BLOCK_SIZE` con longitud de entradas consecutivas en el tiempo dentro del dataset (Deben ser todos los bloques de la misma longitud).
 8. Ajuste los campos de las otras secciones para afinar el entrenamiento si fuera necesario.
+> ⚠️ **Aviso:** No modifique los valores de los campos fuera de `[Dataset]` si no comprende completamente su función.
 
 > **Nota:** `SEQUENCE_LENGTH` y `BLOCK_SIZE` pueden ser del mismo tamaño.
 
-> ⚠️ **Aviso:** No modifique los valores de los campos fuera de `[Dataset]` si no comprende completamente su función.
 
 El sistema permite dos modalidades de entrenamiento:
-* **Entrenamiento Directo:** Ejecutando [`gru_only.bat`](#gruonly).
+* **Entrenamiento Directo:** Ejecutando [`gru_only.bat`](#gruonly). 
 * **Entrenamiento con Autoencoder (Aumento de datos):** Ejecutando [`Autoencoder_And_GRU.bat`](#autoencoderandgru). *(Existe una configuración por defecto en las secciones `[Autoencoder]` y `[GRU]` del `config.ini` que puede ser modificada según las necesidades del proyecto).*
+
+> **Nota** Se recomiendo usar `gru_only.bat` para el entrenamiento con el dataset que proporcionamos.
 
 Tras el entrenamiento, el modelo generado se ubicará en la carpeta `models`, quedando listo para su integración en Unreal Engine.
 
@@ -76,9 +78,11 @@ Si desea validar el entrenamiento con nuevos datos empíricos:
 
 > **Nota de Diseño:** Para facilitar las pruebas y la integración, esta guía se apoya en los sistemas preconstruidos utilizados en nuestra **Demo1**. En lugar de programar la lógica desde cero, le guiaremos para implementar nuestras herramientas modulares. De esta forma, obtendrá una IA funcional de forma casi inmediata, comprendiendo en cada paso el funcionamiento interno del sistema.
 
-**Paso previo:** Copie los archivos gru_model.onnx y gru_model.onnx.data (ubicado en la carpeta `models`) dentro del directorio `Content` de su proyecto de Unreal Engine.
+**Paso previo:** Copie los archivos gru_model.onnx y gru_model.onnx.data (ubicado en la carpeta `models`) en cualquier lugar dentro del directorio `Content` de su proyecto de Unreal Engine.
 
 ## 2.1 Preparación del entorno y navegación <a name="21-preparación-del-entorno-y-navegación"></a>
+> ![IMPORTANTE]
+> EXplicar donde se encuentra PlaceActor.
 
 Para garantizar el correcto funcionamiento de la Inteligencia Artificial, el entorno debe soportar las acciones parametrizadas durante el entrenamiento.
 
@@ -97,7 +101,7 @@ Se proporciona un actor preconfigurado (`DemoSandBoxCharacter_Mover`) ubicado en
 ## 2.3 Configuración del Cerebro (Componente EmotionAI) <a name="23-configuración-del-cerebro-componente-emotionai"></a>
 
 Para dotar al NPC de procesamiento emocional, utilize el componente de `EmotionAI`.
-Dispone de un Actor Blueprint de ejemplo parcialmente configurado en `Content/TFG-Castellanos-Sanchez/IA` llamado `Test_EmotionIA`. 
+Dispone de un Actor Blueprint de ejemplo parcialmente configurado en `Content/TFG-Castellanos-Sanchez/IA` llamado `Test_EmotionIA`, arrastrelo a la escena y luego abra el blueprint. 
 
 > **Nota:** Los pasos de esta seccion son en base a un modelo entrenado con el dataset proporcionado.
 
