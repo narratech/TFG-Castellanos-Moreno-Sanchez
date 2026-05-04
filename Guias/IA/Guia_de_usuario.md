@@ -87,16 +87,16 @@ Si desea validar el entrenamiento con nuevos datos empíricos:
 Para garantizar el correcto funcionamiento de la Inteligencia Artificial, el entorno debe soportar las acciones parametrizadas durante el entrenamiento.
 
 * **Nivel de trabajo:** Puede crear un nivel nuevo o utilizar uno existente. Recomendamos encarecidamente utilizar el nivel preconfigurado de prueba: `Demo2`, localizado en `Content/TFG-Castellanos-Sanchez/Levels`. De esta forma será más rápido llegar a nuestro objetivo de crear un nivel parecido al de la Demo1
-* **Volumen de Navegación:** Es estrictamente necesario añadir un volumen de navegación para permitir el desplazamiento del NPC (patrullaje, huida, etc.). Desde el panel *Place Actors*, arrastre un `NavMesh Bounds Volume` a la escena y escálelo hasta cubrir toda la superficie transitable. Pulsando la tecla **P** podrá visualizar en verde las zonas navegables.
+* **Volumen de Navegación:** Es estrictamente necesario añadir un volumen de navegación para permitir el desplazamiento del NPC (patrullaje, huida, etc.). Desde el panel *Place Actors*, el cuál puedes encontrar yendo al barra de encima de la previsualización de la escena, seleccionando el icono de Añadir elementos al proyecto de forma rápida > Place Actors , arrastre un `NavMesh Bounds Volume` a la escena y escálelo hasta cubrir toda la superficie transitable. Pulsando la tecla **P** podrá visualizar en verde las zonas navegables, una vez haya movido al NPC a la escena.
 
 ## 2.2 El personaje base (NPC) <a name="22-el-personaje-base-npc"></a>
 
 Se proporciona un actor preconfigurado (`DemoSandBoxCharacter_Mover`) ubicado en `Content/TFG_CastellanosSanchez/Blueprints/Npc`. Arrástrelo al nivel.
 
 > **Personalización del NPC (MetaHuman)**
-> Por defecto, el actor integra un MetaHuman y componentes de prueba. Debe personalizarlo asignando su propio MetaHuman modificando el *Skeletal Mesh* en el componente `VisualOverride`.
+> Debe personalizarlo asignando su propio MetaHuman modificando el *Skeletal Mesh* en el componente `VisualOverride`: 
 > 1. Para crear un modelo personalizado, consulte el [Video tutorial de MetaHuman Creator](https://youtu.be/2M22x-Jm4WE) (o utilice los modelos incluidos en el `.zip` de la carpeta Content/Metahuman).
-> 2. Acceda al componente `Visual Override` del actor, localice el parámetro `Child Actor` y asigne el Blueprint de su MetaHuman.
+> 2. Acceda al componente `Visual Override` del actor, para ello seleccione dicho actor vaya al panel de detalles y acceda al componente mencionado, localice el parámetro `Child Actor` y asigne el Blueprint de su MetaHuman, si ha creado uno deberá buscar 'BP_[NombreDelMetahuman]', sino podrá buscar algunos de los modelos incluidos como 'BP_Ada' o 'BP_Emanuel'.
 
 ## 2.3 Configuración del Cerebro (Componente EmotionAI) <a name="23-configuración-del-cerebro-componente-emotionai"></a>
 
@@ -214,15 +214,15 @@ Este Blueprint global controla el clima del nivel. Arrástrelo a su escena.
   * Hora de Lluvia: indicar la hora a la que quiere que empiece a llover, los tiempos van de 0 a 2400 (por ejemplo las 16 seria el valor 1600)
   * Hora Fin LLuvia: indicar la hora a la que se termine la lluvia.
   * Test Emotion AI: Indicar los Test Emotion AI de los NPC para saber la intensidad de la lluvia en todo momento.
-  * Lighting Manager: será necesario arrastrar a la escena el `BP_Lighting_Manager`que se encuentra en  `PWL_Light_Manager/Blueprint` (en este Blueprint será interesante configurar la hora en la que empezará la escena, de esta forma cuando más cerca del inicio de la lluvia pues antes lloverá)
-  * Nubes: otro actor interesante a arrastrar en las escena es el `VolumetricCloud`de esta forma será mas realista el efecto. 
-  * Sistema LLuvia: es neceario agregarle el particle system de la lluvia llamado `Rain`.
-  * `Esta Lloviendo` (Booleano): Al activarse, los Evaluadores de la IA detectan el cambio de clima y el GRU ajusta las emociones, obligando al NPC a buscar refugio o calentarse.
+  * Lighting Manager: será necesario arrastrar a la escena el `BP_Lighting_Manager`que se encuentra en  `PWL_Light_Manager/Blueprint`, en este Blueprint será interesante configurar la hora en la que empezará la escena, de esta forma cuando más cerca del inicio de la lluvia pues antes lloverá. Para ello seleccione dicho actor en la jerarquia, vata al panel de detalles, y busque el apartado de 'General Settings'. Encontrará un parámetro que llamado 'Sun Height (Time of day)' que indica la hora del día.  
+  * Nubes: otro actor interesante de la escena es el `VolumetricCloud`de esta forma será mas realista el efecto. 
+  * Sistema LLuvia: es neceario agregarle el particle system de la lluvia llamado `Rain`, Dicho particle system ya está agregado en la escena simplemente habrá que buscarlo e instanciarlo en el parámetro.
+  * `Esta Lloviendo` (Booleano): Al activarse durante la ejecución, los Evaluadores de la IA detectan el cambio de clima y el GRU ajusta las emociones, obligando al NPC a buscar refugio o calentarse.
   
 ### Objetos Interactuables (Ej. El Arma / Pistola)
 
 Dentro de la demo encontrará objetos interactuables diseñados para alterar el comportamiento del NPC.
-* **Uso del Arma:** El jugador deberá arrastra el arma de la ruta `TFG-Castellanos-Sanchez/Blueprints/Interactables`, luego durante el juego podrá interactuar con el arma (pulsando la tecla `E` para recogerla/equiparla). Al hacer clic, el arma apuntará.
+* **Uso del Arma:** El jugador deberá arrastra el arma de la ruta `TFG-Castellanos-Sanchez/Blueprints/Interactables` a cualquier parte accesible de la escena, luego durante el juego podrá interactuar con el arma (pulsando la tecla `E` para recogerla/equiparla). Al hacer clic en la E, se equipará y el arma apuntará.
 * **Impacto en la IA:** El NPC cuenta con conos de visión. Si el jugador entra en su campo de visión con el arma equipada, el estado de amenaza (`IsReaction`) se vuelve verdadero. El modelo GRU procesará un aumento drástico del miedo, lo que obligará al NPC a interrumpir sus tareas y huir al punto de escape más lejano.
 
 
@@ -233,7 +233,7 @@ El puente entre las emociones predichas por el GRU y las acciones físicas del p
 Asigne el controlador de IA proporcionado (**`AIC_NPC_Demo`**) a su NPC. Este controlador utiliza el árbol principal **`ST_NPC_Principal`** (ubicado en `Content/TFG_CastellanosSanchez/Blueprints/AI/StateTree`).
 
 ### 2.7.1 Estructura del `ST_NPC_Principal`
-Para que el árbol de comportamientos funcione sin necesidad de escribir código visual (Blueprints), se apoya en tres pilares fundamentales que usted puede ver en el panel de Detalles del `ST_NPC_Principal`: **Contexto, Parámetros y Evaluadores**.
+Para que el árbol de comportamientos funcione sin necesidad de escribir código visual (Blueprints), se apoya en tres pilares fundamentales que puede ver en el panel de Detalles del `ST_NPC_Principal`: **Contexto, Parámetros y Evaluadores**.
 
 **1. El Contexto (Context)**
 Define sobre "quién" se está ejecutando el árbol. Automáticamente, toma como referencia el **Actor** (el NPC) y su **AIController**. Estas referencias globales se inyectan hacia abajo, permitiendo que cualquier Tarea o Evaluador sepa exactamente a qué NPC está controlando.
@@ -263,31 +263,7 @@ Los evaluadores son el "sistema nervioso" del NPC. Se ejecutan en cada fotograma
     * * *Qué hace:* Lee el sistema de patrullas del nivel.
     * *Variables de Salida:* `Out_CurrentPatrolPoint` (Punto al que debo ir ahora).
 
-### 2.7.2 Sistema de Patrullas Dinámicas (`BP_PatrolPoint`)
-
-Para dotar al nivel de vida, el NPC necesita moverse de forma autónoma cuando no está reaccionando a un estímulo emocional. En lugar de programar coordenadas fijas en el código, hemos implementado un sistema utilizando el actor **`BP_PatrolPoint`**.
-
-Este sistema permite al diseñador de niveles crear rutas complejas de forma visual directamente en el editor.
-
-**1. ¿Qué es el `BP_PatrolPoint`?**
-Es un Blueprint muy ligero que actúa como una baliza o destino. Contiene lógica interna para decirle al NPC hacia dónde debe ir después y cuánto tiempo debe descansar al llegar.
-
-**2. Cómo crear un circuito de patrulla en su nivel:**
-* Vaya a la carpeta `Content/TFG-CastellanosSanchez\Editor`y abra el archivo `EUW_PatrolPoints` y para ejecutar un Editor Utility Widget hay que hacer clic sobre "Run Editor Utility Widget", esto abrirá una ventana para ir creando PatrolPoints a partir del seleccionado.
-* Vaya a la carpeta `Content/TFG_CastellanosSanchez/Blueprints/AI` y arrastre un **`BP_PatrolPoint`** a su escena.
-* Seleccione el **PatrolPoint**. En su pantalla abierta del `EUW_PatrolPoints`, dale a **`Next Patrol Point`** y verá que se crea otro punto.
-* Existe la opción de darle al boton de  **`Between Patrol Point`**, para ello deberá seleccionar un punto A y un punto C, creandose así un punto B. Por lo tanto el recorrido seria A -> B -> C y C -> B -> A
-* Para cerrar el circuito y crear un bucle infinito, en el Punto C seleccione de nuevo el Punto A.
-
-* En el punto 2.4.1 Variables Expuestas (Configuración en Editor) en las variables relacionadas con Patrol Points deciamos que más tarde se explicaría que instanciar. Pues ahora que sabemos que es un patrol point y como se crean en la escena, se recomienda poner varios puntos para la lista de Escape Patrol Points donde se crea que son buenos puntos de huida, como puede ser fuera de la casa. Una vez puestos se deberán instanciar en el editor en las variables de dicho apartado. Lo mismo haremos con el Fire Patrol Point, que sera el punto de la chimenea. En el caso de Actor to Follow se asignara el punto inicial de cada ruta creada, tiene que ser el primer puntos si o si. 
-
-**3. Personalización del comportamiento por punto:**
-
-![Variables Patrol](Imagenes/VariablesBP_Patrol.png)
-
-En el panel de detalles de cada `BP_PatrolPoint` encontrará variables adicionales (como `WaitTime` o *Tiempo de espera*). Esto le permite crear un comportamiento orgánico: puede hacer que el NPC llegue a un punto y espere 5 segundos, pero que al llegar a otro punto continúe caminando inmediatamente (espera = 0). También hay una varibale de Gameplay Tag, para asignar un las animaciones que realizarán al llegar a dicho punto. Por último encontrará la variable `Want Anim Sequence` que si se activa hará que la secuencia de animaciones correspodiente a dicho Patrol Point se realice una detras de otra en vez de elegir solo una animación random de la lista. 
-
-### 2.7.3 Modularidad: Linked Assets (Sub-Árboles)
+### 2.7.2 Modularidad: Linked Assets (Sub-Árboles)
 Nuestra arquitectura es altamente modular. La lógica de combate y clima está encapsulada en **Linked Assets**. 
 * **Aplicación Práctica:** Si usted crea su propio *State Tree* desde cero para un NPC diferente, no necesita reprogramar cómo huir de las armas. Simplemente arrastre nuestro estado "Linked Asset" a su árbol, y su nuevo NPC heredará automáticamente todas nuestras reacciones de supervivencia y análisis del GRU.
 
@@ -309,6 +285,30 @@ Una vez inyectados estos parámetros, el Sub-árbol elige internamente qué hace
 1.  **`Run State`:** Se ejecuta inmediatamente `Si Parameters.bShouldRun es True`.
 2.  **`Reaction State`:** Se ejecuta `Si Parameters.bIsReaction es True` (y la anterior fue falsa). Llama a la tarea interna de reproducir las animaciones alimentándola con las tags recibidas.
 3.  **`Walk State` / `Wait`:** Si ambas condiciones booleanas son falsas, el NPC asume que el peligro ha pasado, procediendo a calmarse o caminar según corresponda, devolviendo finalmente el "Éxito en el árbol" para retornar al árbol principal.ia.
+
+### 2.7.2 Sistema de Patrullas Dinámicas (`BP_PatrolPoint`)
+
+Para dotar al nivel de vida, el NPC necesita moverse de forma autónoma cuando no está reaccionando a un estímulo emocional. En lugar de programar coordenadas fijas en el código, hemos implementado un sistema utilizando el actor **`BP_PatrolPoint`**.
+
+Este sistema permite al diseñador de niveles crear rutas complejas de forma visual directamente en el editor.
+
+**1. ¿Qué es el `BP_PatrolPoint`?**
+Es un Blueprint muy ligero que actúa como una baliza o destino. Contiene lógica interna para decirle al NPC hacia dónde debe ir después y cuánto tiempo debe descansar al llegar.
+
+**2. Cómo crear un circuito de patrulla en su nivel:**
+* Vaya a la carpeta `Content/TFG-CastellanosSanchez\Editor`y abra el archivo `EUW_PatrolPoints` y para ejecutar un Editor Utility Widget hay que hacer clic sobre "Run Editor Utility Widget", esto abrirá una ventana para ir creando PatrolPoints a partir del seleccionado.
+* Vaya a la carpeta `Content/TFG_CastellanosSanchez/Blueprints/AI` y arrastre un **`BP_PatrolPoint`** a su escena.
+* Seleccione el **PatrolPoint**. En su pantalla abierta del `EUW_PatrolPoints`, dale a **`Next Patrol Point`** y verá que se crea otro punto, muevelo hacia donde quiera que vaya el NPC.
+* Existe la opción de darle al boton de  **`Between Patrol Point`**, para ello deberá seleccionar un punto A y un punto C, creandose así un punto B. Por lo tanto el recorrido seria A -> B -> C y C -> B -> A
+* Si quiere cerrar el circuito y crear un bucle infinito, en el Punto C seleccione de nuevo el Punto A.
+
+* En el punto 2.4.1 Variables Expuestas (Configuración en Editor) en las variables relacionadas con Patrol Points deciamos que más tarde se explicaría que instanciar. Pues ahora que sabemos que es un patrol point y como se crean en la escena, se recomienda poner varios puntos para la lista de Escape Patrol Points donde se crea que son buenos puntos de huida, como puede ser fuera de la casa. Una vez puestos se deberán instanciar en el editor en las variables de dicho apartado. Lo mismo haremos con el Fire Patrol Point, que sera el punto de la chimenea. En el caso de Actor to Follow se asignara el punto inicial de cada ruta creada, tiene que ser el primer puntos si o si. 
+
+**3. Personalización del comportamiento por punto:**
+
+![Variables Patrol](Imagenes/VariablesBP_Patrol.png)
+
+En el panel de detalles de cada `BP_PatrolPoint` encontrará variables adicionales (como `WaitTime` o *Tiempo de espera*). Esto le permite crear un comportamiento orgánico: puede hacer que el NPC llegue a un punto y espere 5 segundos, pero que al llegar a otro punto continúe caminando inmediatamente (espera = 0). También hay una varibale de Gameplay Tag, para asignar las animaciones que realizarán al llegar a dicho punto. Por último encontrará la variable `Want Anim Sequence` que si se activa hará que la secuencia de animaciones correspodiente a dicho Patrol Point se realice una detras de otra en vez de elegir solo una animación random de la lista. 
 
 ### 2.7.4 Modularidad Animada: Gameplay Tags y Data Assets
 
@@ -332,9 +332,9 @@ Para que el NPC sepa qué animación física corresponde a esa etiqueta, utiliza
 **3. Implementación para el usuario:**
 Si usted quiere añadir nuevas animaciones o crear un NPC completamente nuevo con nuestro sistema, siga estos pasos:
 
-1. **Crear su Diccionario:** Haga clic derecho en el Content Browser > *Miscellaneous* > *Data Asset*. Seleccione la clase de mapeo de animaciones que proporcionamos.
+1. **Crear su Diccionario:** Haga clic derecho en el Content Browser > *Miscellaneous* > *Data Asset*. Seleccione la clase de mapeo de animaciones que proporcionamos, 'PDA_Animation'.
 2. **Llenar el Diccionario:** Abra su nuevo Data Asset y añada tantas filas como necesite. Asigne una etiqueta (ej. `Anim.Reactions.Idle`) y añada en la lista *Animations Montages* de su propio personaje.
-3. **Equipar al Cerebro:** Vaya al Blueprint de su nuevo NPC. Seleccione su componente principal de comportamiento o variables y busque la ranura para el Data Asset de animación. Arrastre ahí el archivo que acaba de crear.
+3. **Equipar al Cerebro:** Vaya al Blueprint de su nuevo NPC. Seleccione su componente principal de comportamiento o variables y busque la ranura para el Data Asset de animación. Asigne ahí el archivo que acaba de crear.
 
 ![DataAsset](Imagenes/DataAssetAnim.png)
 
