@@ -74,15 +74,13 @@ Si desea validar el entrenamiento con nuevos datos empíricos:
 
 # 2. Guía de instalación del Plugin en Unreal Engine <a name="2-guía-de-instalación-del-plugin-en-unreal-engine"></a>
 > **Nota:**
-> Como todavia no se ha podido completar la creado del plugin para la carpetas de Plugins de Unreal, trabajaremos desde el proyecto del repositorio
+> Como todavia no se ha podido completar la carpeta del plugin para la carpetas de Plugins de Unreal, trabajaremos desde el proyecto del repositorio
 
 > **Nota de Diseño:** Para facilitar las pruebas y la integración, esta guía se apoya en los sistemas preconstruidos utilizados en nuestra **Demo1**. En lugar de programar la lógica desde cero, le guiaremos para implementar nuestras herramientas modulares. De esta forma, obtendrá una IA funcional de forma casi inmediata, comprendiendo en cada paso el funcionamiento interno del sistema.
 
 **Paso previo:** Copie los archivos gru_model.onnx y gru_model.onnx.data (ubicado en la carpeta `models`) en cualquier lugar dentro del directorio `Content` de su proyecto de Unreal Engine.
 
 ## 2.1 Preparación del entorno y navegación <a name="21-preparación-del-entorno-y-navegación"></a>
-> ![IMPORTANTE]
-> EXplicar donde se encuentra PlaceActor.
 
 Para garantizar el correcto funcionamiento de la Inteligencia Artificial, el entorno debe soportar las acciones parametrizadas durante el entrenamiento.
 
