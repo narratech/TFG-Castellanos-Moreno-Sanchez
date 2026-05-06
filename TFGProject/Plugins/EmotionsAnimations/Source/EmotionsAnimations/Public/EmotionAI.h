@@ -1,14 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
 
 #include "EmotionAI.generated.h"
 
 struct FEmotionIAInternalModel;
 
 UCLASS(ClassGroup = (AI), meta = (BlueprintSpawnableComponent))
-class TFGPROJECT_API UEmotionAI : public UActorComponent
+class EMOTIONSANIMATIONS_API UEmotionAI : public UActorComponent
 {
     GENERATED_BODY()
 

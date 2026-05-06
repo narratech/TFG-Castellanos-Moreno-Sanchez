@@ -6,6 +6,7 @@
 #include "Windows/WindowsHWrapper.h" // para LoadLibraryEx
 #include "Windows/AllowWindowsPlatformTypes.h"
 #include <vector>
+#include "Interfaces/IPluginManager.h"
 
 //Version de ORT que se va a usar
 #define ORT_VERSION 20
@@ -28,7 +29,7 @@ struct FEmotionIAInternalModel
 
 bool UEmotionAI::CheckONNXDependenciesDynamic()
 {
-    FString BasePath = FPaths::ProjectDir() / TEXT("ThirdParty/ONNXRuntime/lib");
+    FString BasePath = IPluginManager::Get().FindPlugin("EmotionsAnimations")->GetBaseDir() / TEXT("/Binaries/Win64");
     FString MainDLL = BasePath / TEXT("onnxruntime.dll");
 
     // Intentamos cargar la DLL principal sin ejecutar DllMain

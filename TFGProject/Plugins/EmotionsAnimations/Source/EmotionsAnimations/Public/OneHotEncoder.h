@@ -8,7 +8,7 @@
 
 
 UCLASS()
-class TFGPROJECT_API UOneHotEncoder : public UBlueprintFunctionLibrary
+class EMOTIONSANIMATIONS_API UOneHotEncoder : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
