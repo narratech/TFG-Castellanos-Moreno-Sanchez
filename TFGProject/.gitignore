@@ -82,9 +82,8 @@ Content/Megascans/
 RawContent/RawContentNoRepo/
 
 # Ficheros binarios
-!Plugins/EmotionsAnimations/Binaries/Win64/onnxruntime.dll
 Binaries/*
-#Plugins/*/Binaries/*
+Plugins/*/Binaries/*
 
 # Builds
 Build/*
@@ -110,4 +109,5 @@ Plugins/*/Intermediate/*
 # Ficheros cacheados que usa el editor
 DerivedDataCache/*
 
+!Plugins/EmotionsAnimations/Binaries/Win64/onnxruntime.dll
 !Plugins/EmotionsAnimations/Source/ThirdParty/ONNXRuntime/lib/onnxruntime.lib
