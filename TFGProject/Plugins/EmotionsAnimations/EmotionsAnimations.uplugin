@@ -3,7 +3,7 @@
 	"Version": 1,
 	"VersionName": "1.0",
 	"FriendlyName": "EmotionsAnimations",
-	"Description": "This plugin leverages artificial intelligence to dynamically analyze and interpret the emotional state of NPCs in real time. Based on this emotional context, it generates subtle micro-movements and nuanced animation variations that enhance character believability and immersion.By blending procedural animation with AI-driven behavior modeling, the system introduces organic details such as slight posture shifts, facial tension, and reactive idle motions. The result is more lifelike, responsive characters that feel emotionally grounded and less mechanical, significantly improving the overall realism of in-game interactions.",
+	"Description": "This plugin leverages artificial intelligence to dynamically analyze and interpret the emotional state of NPCs in real time. Based on this emotional context, it generates subtle micro-movements and nuanced animation variations that enhance character believability and immersion. By blending procedural animation with AI-driven behavior modeling, the system introduces organic details such as slight posture shifts, facial tension, and reactive idle motions. The result is more lifelike, responsive characters that feel emotionally grounded and less mechanical, significantly improving the overall realism of in-game interactions.",
 	"Category": "Other",
 	"CreatedBy": "Pedro Sanchez Vela & Adrian Castellanos Ormeno",
 	"CreatedByURL": "",
@@ -19,6 +19,28 @@
 			"Name": "EmotionsAnimations",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "Mover",
+			"Enabled": true
+		},
+		{
+			"Name": "MotionTrajectory",
+			"Enabled": true
+		},
+		{
+			"Name": "PoseSearch",
+			"Enabled": true
+		},
+		{
+			"Name": "DrawDebugLibrary",
+			"Enabled": true
+		},
+		{
+			"Name": "MotionWarping",
+			"Enabled": true
 		}
 	]
 }
