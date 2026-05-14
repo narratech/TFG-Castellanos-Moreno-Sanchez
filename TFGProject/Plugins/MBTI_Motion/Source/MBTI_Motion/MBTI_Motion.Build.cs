@@ -21,18 +21,37 @@ public class MBTI_Motion : ModuleRules
 				// ... add other private include paths required here ...
 			}
 			);
-			
-		
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Core",
+
+
+        // Ruta de ONNX
+        string ONNXPath = Path.Combine(ModuleDirectory, "../ThirdParty/ONNXRuntime");
+
+        //Includes
+        PublicIncludePaths.Add(Path.Combine(ONNXPath, "include"));
+
+        //Static libraries
+        PublicAdditionalLibraries.Add(Path.Combine(ONNXPath, "lib", "onnxruntime.lib"));
+
+
+        //Dynamic libraries
+        PublicDelayLoadDLLs.Add("onnxruntime.dll");
+        RuntimeDependencies.Add(Path.Combine("$(PluginDir)/Binaries/Win64/onnxruntime.dll"));
+
+
+        PublicDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "Core",
+                "Projects",
+                "CoreUObject",
+                "Engine",
+                "InputCore"
 				// ... add other public dependencies that you statically link with here ...
 			}
-			);
-			
-		
-		PrivateDependencyModuleNames.AddRange(
+            );
+
+
+        PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
 				"CoreUObject",
