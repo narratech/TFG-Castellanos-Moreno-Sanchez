@@ -72,21 +72,21 @@ Si desea validar el entrenamiento con nuevos datos empíricos:
 ---
 
 # 2. Guía de instalación del Plugin en Unreal Engine <a name="2-guía-de-instalación-del-plugin-en-unreal-engine"></a>
-> **Nota:**
-> Como todavia no se ha podido completar la carpeta del plugin para la carpetas de Plugins de Unreal, trabajaremos desde el proyecto del repositorio
+# 2.1 Instalación del Plugin en el proyecto <a name="21-instalacion-del-plugin"></a>
+Para poder contar con nuestro plugin en su proyecto creado de Unreal Engine, debera acceder al archivo .zip y descomprimirlo en una carpeta llamada `Plugins` en la raiz del proyecto de Unreal. Si dicha carpeta no está creada, creela. Una vez descomprimido abrá el proyecto y ya será visible desde el explorador de archivos del motor. 
 
 > **Nota de Diseño:** Para facilitar las pruebas y la integración, esta guía se apoya en los sistemas preconstruidos utilizados en nuestra **Demo1**, del proyecto del repositorio. En lugar de programar la lógica desde cero, le guiaremos para implementar nuestras herramientas modulares. De esta forma, obtendrá una IA funcional de forma casi inmediata, comprendiendo en cada paso el funcionamiento interno del sistema.
 
 **Paso previo:** Copie los archivos gru_model.onnx y gru_model.onnx.data (ubicado en la carpeta `models`) en cualquier lugar dentro del directorio `Content` de su proyecto de Unreal Engine.
 
-## 2.1 Preparación del entorno y navegación <a name="21-preparación-del-entorno-y-navegación"></a>
+## 2.2 Preparación del entorno y navegación <a name="22-preparación-del-entorno-y-navegación"></a>
 
 Para garantizar el correcto funcionamiento de la Inteligencia Artificial, el entorno debe soportar las acciones parametrizadas durante el entrenamiento.
 
 * **Nivel de trabajo:** Puede crear un nivel nuevo o utilizar uno existente. Recomendamos utilizar el nivel preconfigurado de prueba: `Demo2`, localizado en `Content/TFG-Castellanos-Sanchez/Levels`, en nuestro proyecto del repositorio, como toma de contacto. De esta forma será más rápido llegar a nuestro objetivo de crear un nivel parecido al de la `Demo1`.
 * **Volumen de Navegación:** Es estrictamente necesario añadir un volumen de navegación para permitir el desplazamiento del NPC (patrullaje, huida, etc.). Desde el panel *Place Actors*, el cuál puedes encontrar yendo al barra de encima de la previsualización de la escena, seleccionando el icono de Añadir elementos al proyecto de forma rápida > Place Actors , arrastre un `NavMesh Bounds Volume` a la escena y escálelo hasta cubrir toda la superficie transitable. Una vez haya movido al NPC a la escena en el siguiente paso, al pulsar la tecla **P** podrá visualizar en verde las zonas navegables.
 
-## 2.2 El personaje base (NPC) <a name="22-el-personaje-base-npc"></a>
+## 2.3 El personaje base (NPC) <a name="23-el-personaje-base-npc"></a>
 
 Se proporciona un actor preconfigurado (`DemoSandBoxCharacter_Mover`) ubicado en `Plugins/MBTI_Motion/Content/Blueprints/NPC`. Arrástrelo al nivel.
 
@@ -95,7 +95,7 @@ Se proporciona un actor preconfigurado (`DemoSandBoxCharacter_Mover`) ubicado en
 > 1. Para crear un modelo personalizado, consulte el [Video tutorial de MetaHuman Creator](https://youtu.be/2M22x-Jm4WE) (o utilice los modelos incluidos en el proyecto del repositorio en la carpeta Content/Metahuman, migrandolos así a su proyecto).
 > 2. Acceda al componente `Visual Override` del actor, para ello seleccione dicho actor vaya al panel de detalles y acceda al componente mencionado, localice el parámetro `Child Actor Class` y asigne el Blueprint de su MetaHuman, si ha creado uno deberá buscar 'BP_[NombreDelMetahuman]', sino podrá buscar algunos de los modelos migrados como 'BP_Ada' o 'BP_Emanuel'.
 
-## 2.3 Configuración del Cerebro (Componente EmotionAI) <a name="23-configuración-del-cerebro-componente-emotionai"></a>
+## 2.4 Configuración del Cerebro (Componente EmotionAI) <a name="24-configuración-del-cerebro-componente-emotionai"></a>
 
 Para dotar al NPC de procesamiento emocional, utilize el componente de `EmotionAI`.
 Dispone de un Actor Blueprint de ejemplo parcialmente configurado en `Content/TFG-Castellanos-Sanchez/IA` llamado `Test_EmotionIA`, de nuestro proyecto. El cuál podrá migrar y arrastrarlo a la escena, para luego abrir el blueprint. 
@@ -143,14 +143,14 @@ Para concluir, termine de enlazar la salida de `Run Inference` con el nodo `SET`
 
 ![Result2](Imagenes/ResultadoAI2.png)
 
-## 2.4 Conexión con el Cerebro (Componente `BPC_PsicologyNPC`) <a name="24-conexion-con-el-cerebro"></a>
+## 2.5 Conexión con el Cerebro (Componente `BPC_PsicologyNPC`) <a name="25-conexion-con-el-cerebro"></a>
 
 > **Recomendación de Diseño (Acelerador de Integración):** > En lugar de programar la memoria y los sensores de cada NPC desde cero, en nuestro proyecto del repositorio cuenta nuestro componente modular **`BPC_PsicologyNPC`**, pero este está adaptado e nuestra versión del modelo GRU. Este componente actúa como la "corteza prefrontal" del personaje: gestiona sus recuerdos, evalúa el entorno periódicamente y procesa quién golpea a quién, enviando los datos limpios al modelo GRU. Es un requerimiento clave para que los comportamientos avanzados de la demo funcionen sin configuraciones extra.
 
 Para poder usarlo acceda a la carpeta `Content/TFG-Castellanos-Sanchez/Blueprints/Components`, y migre dicho componente a su proyecto. 
 Para implementarselo al actor del NPC, simplemente abra el Blueprint de su personaje (ej. `DemoSandBoxCharacter_Mover`), haga clic en *Add Component* y añada **`BPC_PsicologyNPC`**.
 
-### 2.4.1 Variables Expuestas (Configuración en Editor)
+### 2.5.1 Variables Expuestas (Configuración en Editor)
 Una vez añadido el componente, selecciónelo para ver su panel de Detalles. Encontrará una serie de variables públicas que debe configurar directamente en el editor del nivel para cada NPC instanciado:
 
 ![Variables expuestas](Imagenes/VariablesBP_Psicology.png)
@@ -168,7 +168,7 @@ Una vez añadido el componente, selecciónelo para ver su panel de Detalles. Enc
 * **Categoría *Entorno***
   * **`Range`:** El radio de visión y consciencia del NPC (en unidades de Unreal).
 
-### 2.4.2 Funcionamiento Interno (¿Qué hace este componente por usted?)
+### 2.5.2 Funcionamiento Interno (¿Qué hace este componente por usted?)
 
 Si decide investigar el Blueprint por dentro, verá que hemos optimizado la arquitectura siguiendo estándares de la industria AAA:
 
@@ -182,7 +182,7 @@ Cuenta con una lógica robusta para interrumpir rutas. Cuando surge una emergenc
 Es el sistema más avanzado del componente. Si ocurre una pelea en el radio de visión del NPC, este evento recibe quién es el Agresor y quién es la Víctima. 
 El código busca a estos actores dentro de su **`Social Memory`** (el diccionario que usted configuró). Al identificar sus roles (por ejemplo, si descubre que la víctima es "Yo" o es un "Aliado"), mapea inmediatamente estos roles en las variables `Rol Agresor` y `Rol Victima` y dispara una actualización directa al Cerebro Emocional (`Set Roles Emotion AI`). El modelo GRU procesará este evento al instante, alterando drásticamente el estado emocional del NPC hacia el miedo o la ira.
 
-## 2.5 Conexión con el sistema de animación <a name="25-conexión-con-el-sistema-de-animación"></a>
+## 2.6 Conexión con el sistema de animación <a name="26-conexión-con-el-sistema-de-animación"></a>
 
 Para reflejar físicamente las emociones procesadas:
 
@@ -201,7 +201,7 @@ Para reflejar físicamente las emociones procesadas:
 > [!IMPORTANT]
 > Ahora para que funciones todo, debe volver al componente creado en el paso 2.3, o si ha usado el componente `Test_EmotionAI` acceda al panel de detalles y verá una variable llamada `Animation Actor`, en la que debera asignaar la referencia a la instancia de `BP_AnimationSystem`
 
-## 2.6 Interacción y Control del Entorno (Variables Dinámicas) <a name="26-interaccion-control-del-entorno"></a>
+## 2.7 Interacción y Control del Entorno (Variables Dinámicas) <a name="27-interaccion-control-del-entorno"></a>
 
 La IA reacciona dinámicamente a los estímulos. Para facilitar las pruebas, hemos incluido, en nuestro proyecto del repositorio, sistemas preconfigurados que actúan como "disparadores" para las emociones del NPC:
 
@@ -228,13 +228,13 @@ Dentro de la demo encontrará objetos interactuables diseñados para alterar el 
 * **Impacto en la IA:** El NPC cuenta con conos de visión. Si el jugador entra en su campo de visión con el arma equipada, el estado de amenaza (`IsReaction`) se vuelve verdadero. El modelo GRU procesará un aumento drástico del miedo, lo que obligará al NPC a interrumpir sus tareas y huir al punto de escape más lejano.
 
 
-## 2.7 Arquitectura de Comportamiento: StateTrees y Animaciones <a name="27-reacciones-y-árboles-de-estado-statetrees"></a>
+## 2.8 Arquitectura de Comportamiento: StateTrees y Animaciones <a name="28-reacciones-y-árboles-de-estado-statetrees"></a>
 
 El puente entre las emociones predichas por el GRU y las acciones físicas del personaje se gestiona mediante un **State Tree**. 
 
 Asigne el controlador de IA proporcionado (**`AIC_NPC_Demo`**) a su NPC. Para ello acceda al panel de detalles del actor `DemoSandBoxCharacter_Mover`, y verá una variable llamada `AIController`, asigne el controlador antes mencionado en esta variable. Este controlador utiliza el árbol principal **`ST_NPC_Principal`** (ubicado en `Content/TFG_CastellanosSanchez/Blueprints/AI/StateTree`).
 
-### 2.7.1 Estructura del `ST_NPC_Principal`
+### 2.8.1 Estructura del `ST_NPC_Principal`
 Para que el árbol de comportamientos funcione sin necesidad de escribir código visual (Blueprints), se apoya en tres pilares fundamentales que puede ver en el panel de Detalles del `ST_NPC_Principal`: **Contexto, Parámetros y Evaluadores**.
 
 **1. El Contexto (Context)**
@@ -265,7 +265,7 @@ Los evaluadores son el "sistema nervioso" del NPC. Se ejecutan en cada fotograma
     * * *Qué hace:* Lee el sistema de patrullas del nivel.
     * *Variables de Salida:* `Out_CurrentPatrolPoint` (Punto al que debo ir ahora).
 
-### 2.7.2 Modularidad: Linked Assets (Sub-Árboles)
+### 2.8.2 Modularidad: Linked Assets (Sub-Árboles)
 Nuestra arquitectura es altamente modular. La lógica de combate y clima está encapsulada en **Linked Assets**. 
 * **Aplicación Práctica:** Si usted crea su propio *State Tree* desde cero para un NPC diferente, no necesita reprogramar cómo huir de las armas. Simplemente arrastre nuestro estado "Linked Asset" a su árbol, y su nuevo NPC heredará automáticamente todas nuestras reacciones de supervivencia y análisis del GRU.
 
@@ -288,7 +288,7 @@ Una vez inyectados estos parámetros, el Sub-árbol elige internamente qué hace
 2.  **`Reaction State`:** Se ejecuta `Si Parameters.bIsReaction es True` (y la anterior fue falsa). Llama a la tarea interna de reproducir las animaciones alimentándola con las tags recibidas.
 3.  **`Walk State` / `Wait`:** Si ambas condiciones booleanas son falsas, el NPC asume que el peligro ha pasado, procediendo a calmarse o caminar según corresponda, devolviendo finalmente el "Éxito en el árbol" para retornar al árbol principal.ia.
 
-### 2.7.2 Sistema de Patrullas Dinámicas (`BP_PatrolPoint`)
+### 2.8.3 Sistema de Patrullas Dinámicas (`BP_PatrolPoint`)
 
 Para dotar al nivel de vida, el NPC necesita moverse de forma autónoma cuando no está reaccionando a un estímulo emocional. En lugar de programar coordenadas fijas en el código, hemos implementado en nuestro proyecto un sistema utilizando el actor **`BP_PatrolPoint`**.
 
@@ -314,7 +314,7 @@ Es un Blueprint muy ligero que actúa como una baliza o destino. Contiene lógic
 
 En el panel de detalles de cada `BP_PatrolPoint` encontrará variables adicionales (como `WaitTime` o *Tiempo de espera*). Esto le permite crear un comportamiento orgánico: puede hacer que el NPC llegue a un punto y espere 5 segundos, pero que al llegar a otro punto continúe caminando inmediatamente (espera = 0). También hay una varibale de Gameplay Tag, para asignar las animaciones que realizarán al llegar a dicho punto. Por último encontrará la variable `Want Anim Sequence` que si se activa hará que la secuencia de animaciones correspodiente a dicho Patrol Point se realice una detras de otra en vez de elegir solo una animación random de la lista. 
 
-### 2.7.4 Modularidad Animada: Gameplay Tags y Data Assets
+### 2.8.4 Modularidad Animada: Gameplay Tags y Data Assets
 
 Uno de los mayores errores en el desarrollo de IA es "hardcodear" (fijar directamente en el código) las animaciones. Si le decimos al State Tree *"Reproduce la animación de huir de Pedro"*, ese State Tree ya no servirá para "María", porque intentará usar el esqueleto de Pedro.
 
