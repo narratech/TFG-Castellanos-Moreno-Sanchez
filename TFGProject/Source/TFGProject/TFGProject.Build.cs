@@ -13,20 +13,6 @@ public class TFGProject : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
-        // Ruta de ONNX
-        string ONNXPath = Path.Combine(ModuleDirectory, "../../ThirdParty/ONNXRuntime");
-
-        //Includes
-        PublicIncludePaths.Add(Path.Combine(ONNXPath, "include"));
-
-        //Static libraries
-        PublicAdditionalLibraries.Add(Path.Combine(ONNXPath, "lib", "onnxruntime.lib"));
-
-
-        //Dynamic libraries
-        PublicDelayLoadDLLs.Add("onnxruntime.dll");
-        RuntimeDependencies.Add(Path.Combine(ONNXPath, "lib", "onnxruntime.dll"));
-
         // Uncomment if you are using Slate UI
         // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 
