@@ -33,14 +33,15 @@ Para inicializar el entorno de entrenamiento, es requisito indispensable tener i
 
 **Pasos de instalación:**
 1. Descargar el [archivo comprimido](https://github.com/narratech/TFG-Castellanos-Sanchez/releases/tag/GRU_Trainer) del repositorio de GitHub y extraer su contenido en un directorio vacío.
-2. Navegar a la ruta `TFG-Castellanos-Sanchez\GRU` y ejecutar el script `import_dependencies.bat`. Este proceso generará automáticamente un entorno virtual dentro de la carpeta `venv`.
+2. Abrir la carpeta descomprimida y ejecutar el script `import_dependencies.bat`. Este proceso generará automáticamente un entorno virtual dentro de la carpeta `venv`.
 3. Copiar el dataset propio (en formato `.csv` delimitado por comas) dentro del directorio `dataset`.
 
 ## 1.2 Instrucciones de Uso <a name="12-instrucciones-de-uso"></a>
 
-Una vez completada la instalación y generado el entorno virtual, proceda con los siguientes pasos desde el directorio `Castellanos-Sanchez\GRU`:
+Una vez completada la instalación y generado el entorno virtual, proceda con los siguientes pasos desde el directorio `GRU`:
 > **Nota:** El fichero config.ini tiene unos valores predefinidos para el dataset proporcionado
 
+> ⚠️ **Aviso:** No modifique los valores de los campos fuera de `[Dataset]` si no comprende completamente su función.
 1. Abra el archivo de configuración `config.ini`.
 2. Localize la seccion `[Dataset]`.
 3. Rellene el campo `CSV_NAME` con el nombre del .csv dentro de la carpeta `dataset` con el que entrenará el modelo.
@@ -49,10 +50,8 @@ Una vez completada la instalación y generado el entorno virtual, proceda con lo
 6. Rellene el campo `SEQUENCE_LENGTH` con la longitud de secuencia con la que entrenará el modelo.
 7. Rellene el campo `BLOCK_SIZE` con longitud de entradas consecutivas en el tiempo dentro del dataset (Deben ser todos los bloques de la misma longitud).
 8. Ajuste los campos de las otras secciones para afinar el entrenamiento si fuera necesario.
-> ⚠️ **Aviso:** No modifique los valores de los campos fuera de `[Dataset]` si no comprende completamente su función.
 
 > **Nota:** `SEQUENCE_LENGTH` y `BLOCK_SIZE` pueden ser del mismo tamaño.
-
 
 El sistema permite dos modalidades de entrenamiento:
 * **Entrenamiento Directo:** Ejecutando [`gru_only.bat`](#gruonly). 
@@ -73,35 +72,33 @@ Si desea validar el entrenamiento con nuevos datos empíricos:
 ---
 
 # 2. Guía de instalación del Plugin en Unreal Engine <a name="2-guía-de-instalación-del-plugin-en-unreal-engine"></a>
-> **Nota:**
-> Como todavia no se ha podido completar la creado del plugin para la carpetas de Plugins de Unreal, trabajaremos desde el proyecto del repositorio
+# 2.1 Instalación del Plugin en el proyecto <a name="21-instalacion-del-plugin"></a>
+Para poder contar con nuestro plugin en su proyecto creado de Unreal Engine, debera acceder al archivo .zip y descomprimirlo en una carpeta llamada `Plugins` en la raiz del proyecto de Unreal. Si dicha carpeta no está creada, creela. Una vez descomprimido abrá el proyecto y ya será visible desde el explorador de archivos del motor. 
 
-> **Nota de Diseño:** Para facilitar las pruebas y la integración, esta guía se apoya en los sistemas preconstruidos utilizados en nuestra **Demo1**. En lugar de programar la lógica desde cero, le guiaremos para implementar nuestras herramientas modulares. De esta forma, obtendrá una IA funcional de forma casi inmediata, comprendiendo en cada paso el funcionamiento interno del sistema.
+> **Nota de Diseño:** Para facilitar las pruebas y la integración, esta guía se apoya en los sistemas preconstruidos utilizados en nuestra **Demo1**, del proyecto del repositorio. En lugar de programar la lógica desde cero, le guiaremos para implementar nuestras herramientas modulares. De esta forma, obtendrá una IA funcional de forma casi inmediata, comprendiendo en cada paso el funcionamiento interno del sistema.
 
 **Paso previo:** Copie los archivos gru_model.onnx y gru_model.onnx.data (ubicado en la carpeta `models`) en cualquier lugar dentro del directorio `Content` de su proyecto de Unreal Engine.
 
-## 2.1 Preparación del entorno y navegación <a name="21-preparación-del-entorno-y-navegación"></a>
-> ![IMPORTANTE]
-> EXplicar donde se encuentra PlaceActor.
+## 2.2 Preparación del entorno y navegación <a name="22-preparación-del-entorno-y-navegación"></a>
 
 Para garantizar el correcto funcionamiento de la Inteligencia Artificial, el entorno debe soportar las acciones parametrizadas durante el entrenamiento.
 
-* **Nivel de trabajo:** Puede crear un nivel nuevo o utilizar uno existente. Recomendamos encarecidamente utilizar el nivel preconfigurado de prueba: `Demo2`, localizado en `Content/TFG-Castellanos-Sanchez/Levels`. De esta forma será más rápido llegar a nuestro objetivo de crear un nivel parecido al de la Demo1
-* **Volumen de Navegación:** Es estrictamente necesario añadir un volumen de navegación para permitir el desplazamiento del NPC (patrullaje, huida, etc.). Desde el panel *Place Actors*, arrastre un `NavMesh Bounds Volume` a la escena y escálelo hasta cubrir toda la superficie transitable. Pulsando la tecla **P** podrá visualizar en verde las zonas navegables.
+* **Nivel de trabajo:** Puede crear un nivel nuevo o utilizar uno existente. Recomendamos utilizar el nivel preconfigurado de prueba: `Demo2`, localizado en `Content/TFG-Castellanos-Sanchez/Levels`, en nuestro proyecto del repositorio, como toma de contacto. De esta forma será más rápido llegar a nuestro objetivo de crear un nivel parecido al de la `Demo1`.
+* **Volumen de Navegación:** Es estrictamente necesario añadir un volumen de navegación para permitir el desplazamiento del NPC (patrullaje, huida, etc.). Desde el panel *Place Actors*, el cuál puedes encontrar yendo al barra de encima de la previsualización de la escena, seleccionando el icono de Añadir elementos al proyecto de forma rápida > Place Actors , arrastre un `NavMesh Bounds Volume` a la escena y escálelo hasta cubrir toda la superficie transitable. Una vez haya movido al NPC a la escena en el siguiente paso, al pulsar la tecla **P** podrá visualizar en verde las zonas navegables.
 
-## 2.2 El personaje base (NPC) <a name="22-el-personaje-base-npc"></a>
+## 2.3 El personaje base (NPC) <a name="23-el-personaje-base-npc"></a>
 
-Se proporciona un actor preconfigurado (`DemoSandBoxCharacter_Mover`) ubicado en `Content/TFG_CastellanosSanchez/Blueprints/Npc`. Arrástrelo al nivel.
+Se proporciona un actor preconfigurado (`DemoSandBoxCharacter_Mover`) ubicado en `Plugins/MBTI_Motion/Content/Blueprints/NPC`. Arrástrelo al nivel.
 
 > **Personalización del NPC (MetaHuman)**
-> Por defecto, el actor integra un MetaHuman y componentes de prueba. Debe personalizarlo asignando su propio MetaHuman modificando el *Skeletal Mesh* en el componente `VisualOverride`.
-> 1. Para crear un modelo personalizado, consulte el [Video tutorial de MetaHuman Creator](https://youtu.be/2M22x-Jm4WE) (o utilice los modelos incluidos en el `.zip` de la carpeta Content/Metahuman).
-> 2. Acceda al componente `Visual Override` del actor, localice el parámetro `Child Actor` y asigne el Blueprint de su MetaHuman.
+> Debe personalizarlo asignando su propio MetaHuman modificando el *Skeletal Mesh* en el componente `VisualOverride`: 
+> 1. Para crear un modelo personalizado, consulte el [Video tutorial de MetaHuman Creator](https://youtu.be/2M22x-Jm4WE) (o utilice los modelos incluidos en el proyecto del repositorio en la carpeta Content/Metahuman, migrandolos así a su proyecto).
+> 2. Acceda al componente `Visual Override` del actor, para ello seleccione dicho actor vaya al panel de detalles y acceda al componente mencionado, localice el parámetro `Child Actor Class` y asigne el Blueprint de su MetaHuman, si ha creado uno deberá buscar 'BP_[NombreDelMetahuman]', sino podrá buscar algunos de los modelos migrados como 'BP_Ada' o 'BP_Emanuel'.
 
-## 2.3 Configuración del Cerebro (Componente EmotionAI) <a name="23-configuración-del-cerebro-componente-emotionai"></a>
+## 2.4 Configuración del Cerebro (Componente EmotionAI) <a name="24-configuración-del-cerebro-componente-emotionai"></a>
 
 Para dotar al NPC de procesamiento emocional, utilize el componente de `EmotionAI`.
-Dispone de un Actor Blueprint de ejemplo parcialmente configurado en `Content/TFG-Castellanos-Sanchez/IA` llamado `Test_EmotionIA`, arrastrelo a la escena y luego abra el blueprint. 
+Dispone de un Actor Blueprint de ejemplo parcialmente configurado en `Content/TFG-Castellanos-Sanchez/IA` llamado `Test_EmotionIA`, de nuestro proyecto. El cuál podrá migrar y arrastrarlo a la escena, para luego abrir el blueprint. 
 
 > **Nota:** Los pasos de esta seccion son en base a un modelo entrenado con el dataset proporcionado.
 
@@ -114,7 +111,7 @@ Antes de realizar la inferencia debe agrupar los datos y vectorizar los que no s
 
 Para ello, tome como ejemplo el Actor Blueprint `Test_EmotionIA` mencionado previamente y sigua una serie de pasos que resumiran el flujo de trabajo de este componente.
 
-* **Agrupacion de dato numéricos:** Crea una variable de tipo *Array<float>* llamado `ArrayCombinado` y establece como valor inicial los valores numericos ya combinados dentro del EventGraph tal y como se ve en la imagen.
+* **Agrupacion de dato numéricos:** Crea una variable de tipo *Array<float>* llamado `ArrayCombinado` y establece como valor inicial los valores numericos ya combinados dentro del EventGraph tal y como se ve en la imagen. Para luego conectar el flujo de ejecución al nodo `Inference` del tipo `Custom Event`.
 
 ![Array combinado](Imagenes/Guia_UE_2.png)
 
@@ -132,6 +129,8 @@ A continuación, añada a la variable `ArrayCombinado` el array obtenido mediant
 Volver a realizar el mismo proceso con las variables `Recibe_Golpeo` y `Recibe_Golpeo_Categories`.
 > **Nota:**  Observe que el orden de `Ejecuta_Golpeo` y `Recibe_Golpeo` tambien coincide con el del dataset si no tenemos en cuenta los valores numericos.
 
+Más adelante podrá ver una captura final de como quedan organizados los nodos y donde se deben conectar los cables del flujo de ejecución. 
+
 * **Realizar la inferencia del modelo:** Use el nodo `Add Time Step` pasandole como parametro la variable `ArrayCombinado` y realize después una inferencia con `Run Inference`. El resultado de la inferencia será un diccionario de valores numericos que usarán como clave los nombres utilizados en `OUTPUT_NAMES` al entrenar el modelo.
 
 ![Nodo One Hot Encode](Imagenes/Guia_UE_4.png)
@@ -144,13 +143,14 @@ Para concluir, termine de enlazar la salida de `Run Inference` con el nodo `SET`
 
 ![Result2](Imagenes/ResultadoAI2.png)
 
-## 2.4 Conexión con el Cerebro (Componente `BPC_PsicologyNPC`) <a name="24-conexion-con-el-cerebro"></a>
+## 2.5 Conexión con el Cerebro (Componente `BPC_PsicologyNPC`) <a name="25-conexion-con-el-cerebro"></a>
 
-> **Recomendación de Diseño (Acelerador de Integración):** > En lugar de programar la memoria y los sensores de cada NPC desde cero, le sugerimos encarecidamente utilizar nuestro componente modular **`BPC_PsicologyNPC`**. Este componente actúa como la "corteza prefrontal" del personaje: gestiona sus recuerdos, evalúa el entorno periódicamente y procesa quién golpea a quién, enviando los datos limpios al modelo GRU. Es un requerimiento clave para que los comportamientos avanzados de la demo funcionen sin configuraciones extra.
+> **Recomendación de Diseño (Acelerador de Integración):** > En lugar de programar la memoria y los sensores de cada NPC desde cero, en nuestro proyecto del repositorio cuenta nuestro componente modular **`BPC_PsicologyNPC`**, pero este está adaptado e nuestra versión del modelo GRU. Este componente actúa como la "corteza prefrontal" del personaje: gestiona sus recuerdos, evalúa el entorno periódicamente y procesa quién golpea a quién, enviando los datos limpios al modelo GRU. Es un requerimiento clave para que los comportamientos avanzados de la demo funcionen sin configuraciones extra.
 
-Para implementarlo, simplemente abra el Blueprint de su personaje (ej. `DemoSandBoxCharacter_Mover`), haga clic en *Add Component* y añada **`BPC_PsicologyNPC`**.
+Para poder usarlo acceda a la carpeta `Content/TFG-Castellanos-Sanchez/Blueprints/Components`, y migre dicho componente a su proyecto. 
+Para implementarselo al actor del NPC, simplemente abra el Blueprint de su personaje (ej. `DemoSandBoxCharacter_Mover`), haga clic en *Add Component* y añada **`BPC_PsicologyNPC`**.
 
-### 2.4.1 Variables Expuestas (Configuración en Editor)
+### 2.5.1 Variables Expuestas (Configuración en Editor)
 Una vez añadido el componente, selecciónelo para ver su panel de Detalles. Encontrará una serie de variables públicas que debe configurar directamente en el editor del nivel para cada NPC instanciado:
 
 ![Variables expuestas](Imagenes/VariablesBP_Psicology.png)
@@ -162,13 +162,13 @@ Una vez añadido el componente, selecciónelo para ver su panel de Detalles. Enc
   * **`Escape Patrol Point` (Array):** Una lista de *Target Points* distribuidos por el mapa que el NPC utilizará como refugios aleatorios cuando el GRU detecte un nivel alto de miedo. Al igual que antes más adelante se explicará como instanciar dichos puntos. 
   * **`Fire Patrol Point`:** Una ubicación segura predefinida relacionada con el clima (por ejemplo, una chimenea) a la que el NPC acudirá si la temperatura es desfavorable. Lo mismo que con las dos anteriores variables. 
 * **Categoría *Social***
-  * **`Social Memory` (Diccionario / Map):** ¡Vital para la interacción! Es un mapa que relaciona *Actores* reales del nivel con nuestro *Enum* `E_SocialRole` (Ej: El jugador = "Jugador", Otro NPC = "NPC1"). El componente utiliza esta memoria para saber a quién está viendo. En este caso no hará falta hacer nada ya que al iniciar el nivel se instancian los valores según el rol escogido al jugar.
+  * **`Social Memory` (Diccionario / Map):** ¡Vital para la interacción! Es un mapa que relaciona *Actores* reales del nivel con nuestro *Enum* `E_SocialRole` (Ej: El jugador = "Jugador", Otro NPC = "NPC1"). El componente utiliza esta memoria para saber a quién está viendo. En nuestro proyecto no hace falta hacer nada ya que al iniciar el nivel se instancian los valores según el rol escogido al jugar.
     *  **⚠️ Implementación en tu proyecto:** Para que el NPC reconozca a otros actores, **debes rellenar este diccionario por código o Blueprints** (usando el nodo `Add` de Mapas) pasándole la referencia del actor y el rol que quieras asignarle.
     * *💡 Ejemplo de arquitectura (Cómo lo hacemos en nuestra Demo):* Nosotros utilizamos un `Game Instance` para guardar el rol elegido por el jugador en el menú principal. Luego, al cargar la escena, utilizamos el *Construction Script* o el *BeginPlay* del Blueprint del Nivel para recuperar ese rol y hacer un `Add` en la `Social Memory` de cada NPC, registrando al jugador. Puedes replicar este sistema o crear tu propio "Manager" que registre estas relaciones al inicio de la partida. 
 * **Categoría *Entorno***
   * **`Range`:** El radio de visión y consciencia del NPC (en unidades de Unreal).
 
-### 2.4.2 Funcionamiento Interno (¿Qué hace este componente por usted?)
+### 2.5.2 Funcionamiento Interno (¿Qué hace este componente por usted?)
 
 Si decide investigar el Blueprint por dentro, verá que hemos optimizado la arquitectura siguiendo estándares de la industria AAA:
 
@@ -182,11 +182,11 @@ Cuenta con una lógica robusta para interrumpir rutas. Cuando surge una emergenc
 Es el sistema más avanzado del componente. Si ocurre una pelea en el radio de visión del NPC, este evento recibe quién es el Agresor y quién es la Víctima. 
 El código busca a estos actores dentro de su **`Social Memory`** (el diccionario que usted configuró). Al identificar sus roles (por ejemplo, si descubre que la víctima es "Yo" o es un "Aliado"), mapea inmediatamente estos roles en las variables `Rol Agresor` y `Rol Victima` y dispara una actualización directa al Cerebro Emocional (`Set Roles Emotion AI`). El modelo GRU procesará este evento al instante, alterando drásticamente el estado emocional del NPC hacia el miedo o la ira.
 
-## 2.5 Conexión con el sistema de animación <a name="25-conexión-con-el-sistema-de-animación"></a>
+## 2.6 Conexión con el sistema de animación <a name="26-conexión-con-el-sistema-de-animación"></a>
 
 Para reflejar físicamente las emociones procesadas:
 
-1. Navegue a `Content/TFG_CastellanosSanchez/Blueprints/ExpresionFacial` e inserte el actor **`BP_AnimationSystem`** en el nivel.
+1. Navegue a `Plugins/MBTI_Motion/Content/Blueprints/AnimationSystem` e inserte el actor **`BP_AnimationSystem`** en el nivel.
    
 ![Variables AS](Imagenes/VariablesBP_AS.png)
 
@@ -197,15 +197,17 @@ Para reflejar físicamente las emociones procesadas:
 ![Set Emotions](Imagenes/ConectorSetEmotions.png)
 
 ![Set Emotions](Imagenes/SetEmotion.png)
-*(Donde `Animation Actor` es una referencia a la instancia de `BP_AnimationSystem`)*.
 
-## 2.6 Interacción y Control del Entorno (Variables Dinámicas) <a name="26-interaccion-control-del-entorno"></a>
+> [!IMPORTANT]
+> Ahora para que funciones todo, debe volver al componente creado en el paso 2.3, o si ha usado el componente `Test_EmotionAI` acceda al panel de detalles y verá una variable llamada `Animation Actor`, en la que debera asignaar la referencia a la instancia de `BP_AnimationSystem`
 
-La IA reacciona dinámicamente a los estímulos. Para facilitar las pruebas, hemos incluido sistemas preconfigurados que actúan como "disparadores" para las emociones del NPC:
+## 2.7 Interacción y Control del Entorno (Variables Dinámicas) <a name="27-interaccion-control-del-entorno"></a>
+
+La IA reacciona dinámicamente a los estímulos. Para facilitar las pruebas, hemos incluido, en nuestro proyecto del repositorio, sistemas preconfigurados que actúan como "disparadores" para las emociones del NPC:
 
 ### Gestor Climático (`BP_WeatherManager`)
 
-Este Blueprint global controla el clima del nivel. Arrástrelo a su escena.
+Este Blueprint global controla el clima del nivel. Accediendo a `Content/TFG-Castellanos-Sanchez/Blueprints/Managers`, podrá migrarlo y arrástrelo a su escena.
 * **¿Qué hace?** Modifica visualmente el entorno (nubes, lluvia, iluminación) y sirve de referencia global para todos los NPCs.
 
 ![Variables WM](Imagenes/VariablesBP_WM.png)
@@ -214,26 +216,26 @@ Este Blueprint global controla el clima del nivel. Arrástrelo a su escena.
   * Hora de Lluvia: indicar la hora a la que quiere que empiece a llover, los tiempos van de 0 a 2400 (por ejemplo las 16 seria el valor 1600)
   * Hora Fin LLuvia: indicar la hora a la que se termine la lluvia.
   * Test Emotion AI: Indicar los Test Emotion AI de los NPC para saber la intensidad de la lluvia en todo momento.
-  * Lighting Manager: será necesario arrastrar a la escena el `BP_Lighting_Manager`que se encuentra en  `PWL_Light_Manager/Blueprint` (en este Blueprint será interesante configurar la hora en la que empezará la escena, de esta forma cuando más cerca del inicio de la lluvia pues antes lloverá)
-  * Nubes: otro actor interesante a arrastrar en las escena es el `VolumetricCloud`de esta forma será mas realista el efecto. 
-  * Sistema LLuvia: es neceario agregarle el particle system de la lluvia llamado `Rain`.
-  * `Esta Lloviendo` (Booleano): Al activarse, los Evaluadores de la IA detectan el cambio de clima y el GRU ajusta las emociones, obligando al NPC a buscar refugio o calentarse.
+  * Lighting Manager: será necesario migrarlo desde nuestro proyecto y arrastrarlo a la escena el `BP_Lighting_Manager`, ubicado en `PWL_Light_Manager/Blueprint`, en este Blueprint será interesante configurar la hora en la que empezará la escena, de esta forma cuando más cerca del inicio de la lluvia pues antes lloverá. Para ello seleccione dicho actor en la jerarquia, vata al panel de detalles, y busque el apartado de 'General Settings'. Encontrará un parámetro que llamado 'Sun Height (Time of day)' que indica la hora del día.  
+  * Nubes: otro actor interesante de la escena es el `VolumetricCloud`de esta forma será mas realista el efecto. 
+  * Sistema LLuvia: es neceario agregarle el particle system de la lluvia llamado `Rain`, Dicho particle system ya está agregado en la escena simplemente habrá que buscarlo e instanciarlo en el parámetro.
+  * `Esta Lloviendo` (Booleano): Al activarse durante la ejecución, los Evaluadores de la IA detectan el cambio de clima y el GRU ajusta las emociones, obligando al NPC a buscar refugio o calentarse.
   
 ### Objetos Interactuables (Ej. El Arma / Pistola)
 
 Dentro de la demo encontrará objetos interactuables diseñados para alterar el comportamiento del NPC.
-* **Uso del Arma:** El jugador deberá arrastra el arma de la ruta `TFG-Castellanos-Sanchez/Blueprints/Interactables`, luego durante el juego podrá interactuar con el arma (pulsando la tecla `E` para recogerla/equiparla). Al hacer clic, el arma apuntará.
+* **Uso del Arma:** Si dicha arma ha sido migrada a su proyecto, el jugador deberá arrastra el arma de la ruta `Content/TFG-Castellanos-Sanchez/Blueprints/Interactables` a cualquier parte accesible de la escena, luego durante el juego podrá interactuar con el arma (pulsando la tecla `E` para recogerla/equiparla). Al hacer clic en la E, se equipará y el arma apuntará.
 * **Impacto en la IA:** El NPC cuenta con conos de visión. Si el jugador entra en su campo de visión con el arma equipada, el estado de amenaza (`IsReaction`) se vuelve verdadero. El modelo GRU procesará un aumento drástico del miedo, lo que obligará al NPC a interrumpir sus tareas y huir al punto de escape más lejano.
 
 
-## 2.7 Arquitectura de Comportamiento: StateTrees y Animaciones <a name="27-reacciones-y-árboles-de-estado-statetrees"></a>
+## 2.8 Arquitectura de Comportamiento: StateTrees y Animaciones <a name="28-reacciones-y-árboles-de-estado-statetrees"></a>
 
 El puente entre las emociones predichas por el GRU y las acciones físicas del personaje se gestiona mediante un **State Tree**. 
 
-Asigne el controlador de IA proporcionado (**`AIC_NPC_Demo`**) a su NPC. Este controlador utiliza el árbol principal **`ST_NPC_Principal`** (ubicado en `Content/TFG_CastellanosSanchez/Blueprints/AI/StateTree`).
+Asigne el controlador de IA proporcionado (**`AIC_NPC_Demo`**) a su NPC. Para ello acceda al panel de detalles del actor `DemoSandBoxCharacter_Mover`, y verá una variable llamada `AIController`, asigne el controlador antes mencionado en esta variable. Este controlador utiliza el árbol principal **`ST_NPC_Principal`** (ubicado en `Content/TFG_CastellanosSanchez/Blueprints/AI/StateTree`).
 
-### 2.7.1 Estructura del `ST_NPC_Principal`
-Para que el árbol de comportamientos funcione sin necesidad de escribir código visual (Blueprints), se apoya en tres pilares fundamentales que usted puede ver en el panel de Detalles del `ST_NPC_Principal`: **Contexto, Parámetros y Evaluadores**.
+### 2.8.1 Estructura del `ST_NPC_Principal`
+Para que el árbol de comportamientos funcione sin necesidad de escribir código visual (Blueprints), se apoya en tres pilares fundamentales que puede ver en el panel de Detalles del `ST_NPC_Principal`: **Contexto, Parámetros y Evaluadores**.
 
 **1. El Contexto (Context)**
 Define sobre "quién" se está ejecutando el árbol. Automáticamente, toma como referencia el **Actor** (el NPC) y su **AIController**. Estas referencias globales se inyectan hacia abajo, permitiendo que cualquier Tarea o Evaluador sepa exactamente a qué NPC está controlando.
@@ -263,31 +265,7 @@ Los evaluadores son el "sistema nervioso" del NPC. Se ejecutan en cada fotograma
     * * *Qué hace:* Lee el sistema de patrullas del nivel.
     * *Variables de Salida:* `Out_CurrentPatrolPoint` (Punto al que debo ir ahora).
 
-### 2.7.2 Sistema de Patrullas Dinámicas (`BP_PatrolPoint`)
-
-Para dotar al nivel de vida, el NPC necesita moverse de forma autónoma cuando no está reaccionando a un estímulo emocional. En lugar de programar coordenadas fijas en el código, hemos implementado un sistema utilizando el actor **`BP_PatrolPoint`**.
-
-Este sistema permite al diseñador de niveles crear rutas complejas de forma visual directamente en el editor.
-
-**1. ¿Qué es el `BP_PatrolPoint`?**
-Es un Blueprint muy ligero que actúa como una baliza o destino. Contiene lógica interna para decirle al NPC hacia dónde debe ir después y cuánto tiempo debe descansar al llegar.
-
-**2. Cómo crear un circuito de patrulla en su nivel:**
-* Vaya a la carpeta `Content/TFG-CastellanosSanchez\Editor`y abra el archivo `EUW_PatrolPoints` y para ejecutar un Editor Utility Widget hay que hacer clic sobre "Run Editor Utility Widget", esto abrirá una ventana para ir creando PatrolPoints a partir del seleccionado.
-* Vaya a la carpeta `Content/TFG_CastellanosSanchez/Blueprints/AI` y arrastre un **`BP_PatrolPoint`** a su escena.
-* Seleccione el **PatrolPoint**. En su pantalla abierta del `EUW_PatrolPoints`, dale a **`Next Patrol Point`** y verá que se crea otro punto.
-* Existe la opción de darle al boton de  **`Between Patrol Point`**, para ello deberá seleccionar un punto A y un punto C, creandose así un punto B. Por lo tanto el recorrido seria A -> B -> C y C -> B -> A
-* Para cerrar el circuito y crear un bucle infinito, en el Punto C seleccione de nuevo el Punto A.
-
-* En el punto 2.4.1 Variables Expuestas (Configuración en Editor) en las variables relacionadas con Patrol Points deciamos que más tarde se explicaría que instanciar. Pues ahora que sabemos que es un patrol point y como se crean en la escena, se recomienda poner varios puntos para la lista de Escape Patrol Points donde se crea que son buenos puntos de huida, como puede ser fuera de la casa. Una vez puestos se deberán instanciar en el editor en las variables de dicho apartado. Lo mismo haremos con el Fire Patrol Point, que sera el punto de la chimenea. En el caso de Actor to Follow se asignara el punto inicial de cada ruta creada, tiene que ser el primer puntos si o si. 
-
-**3. Personalización del comportamiento por punto:**
-
-![Variables Patrol](Imagenes/VariablesBP_Patrol.png)
-
-En el panel de detalles de cada `BP_PatrolPoint` encontrará variables adicionales (como `WaitTime` o *Tiempo de espera*). Esto le permite crear un comportamiento orgánico: puede hacer que el NPC llegue a un punto y espere 5 segundos, pero que al llegar a otro punto continúe caminando inmediatamente (espera = 0). También hay una varibale de Gameplay Tag, para asignar un las animaciones que realizarán al llegar a dicho punto. Por último encontrará la variable `Want Anim Sequence` que si se activa hará que la secuencia de animaciones correspodiente a dicho Patrol Point se realice una detras de otra en vez de elegir solo una animación random de la lista. 
-
-### 2.7.3 Modularidad: Linked Assets (Sub-Árboles)
+### 2.8.2 Modularidad: Linked Assets (Sub-Árboles)
 Nuestra arquitectura es altamente modular. La lógica de combate y clima está encapsulada en **Linked Assets**. 
 * **Aplicación Práctica:** Si usted crea su propio *State Tree* desde cero para un NPC diferente, no necesita reprogramar cómo huir de las armas. Simplemente arrastre nuestro estado "Linked Asset" a su árbol, y su nuevo NPC heredará automáticamente todas nuestras reacciones de supervivencia y análisis del GRU.
 
@@ -310,7 +288,33 @@ Una vez inyectados estos parámetros, el Sub-árbol elige internamente qué hace
 2.  **`Reaction State`:** Se ejecuta `Si Parameters.bIsReaction es True` (y la anterior fue falsa). Llama a la tarea interna de reproducir las animaciones alimentándola con las tags recibidas.
 3.  **`Walk State` / `Wait`:** Si ambas condiciones booleanas son falsas, el NPC asume que el peligro ha pasado, procediendo a calmarse o caminar según corresponda, devolviendo finalmente el "Éxito en el árbol" para retornar al árbol principal.ia.
 
-### 2.7.4 Modularidad Animada: Gameplay Tags y Data Assets
+### 2.8.3 Sistema de Patrullas Dinámicas (`BP_PatrolPoint`)
+
+Para dotar al nivel de vida, el NPC necesita moverse de forma autónoma cuando no está reaccionando a un estímulo emocional. En lugar de programar coordenadas fijas en el código, hemos implementado en nuestro proyecto un sistema utilizando el actor **`BP_PatrolPoint`**.
+
+Este sistema permite al diseñador de niveles crear rutas complejas de forma visual directamente en el editor.
+
+**1. ¿Qué es el `BP_PatrolPoint`?**
+Es un Blueprint muy ligero que actúa como una baliza o destino. Contiene lógica interna para decirle al NPC hacia dónde debe ir después y cuánto tiempo debe descansar al llegar.
+
+**2. Cómo crear un circuito de patrulla en su nivel:**
+> **Nota:** Debe comprobar si dichas carpetas que se van a mencionar están migradas en su proyecto.
+
+* Vaya a la carpeta `Content/TFG-CastellanosSanchez/Editor`y abra el archivo `EUW_PatrolPoints` y para ejecutar un Editor Utility Widget hay que hacer clic sobre "Run Editor Utility Widget", esto abrirá una ventana para ir creando PatrolPoints a partir del seleccionado.
+* Vaya a la carpeta `Content/TFG_CastellanosSanchez/Blueprints/AI` y arrastre un **`BP_PatrolPoint`** a su escena.
+* Seleccione el **PatrolPoint**. En su pantalla abierta del `EUW_PatrolPoints`, dale a **`Next Patrol Point`** y verá que se crea otro punto, muevelo hacia donde quiera que vaya el NPC.
+* Existe la opción de darle al boton de  **`Between Patrol Point`**, para ello deberá seleccionar un punto A y un punto C, creandose así un punto B. Por lo tanto el recorrido seria A -> B -> C y C -> B -> A
+* Si quiere cerrar el circuito y crear un bucle infinito, en el Punto C seleccione de nuevo el Punto A.
+
+* En el punto 2.4.1 Variables Expuestas (Configuración en Editor) en las variables relacionadas con Patrol Points deciamos que más tarde se explicaría que instanciar. Pues ahora que sabemos que es un patrol point y como se crean en la escena, se recomienda poner varios puntos para la lista de Escape Patrol Points donde se crea que son buenos puntos de huida, como puede ser fuera de la casa. Una vez puestos se deberán instanciar en el editor en las variables de dicho apartado. Lo mismo haremos con el Fire Patrol Point, que sera el punto de la chimenea. En el caso de Actor to Follow se asignara el punto inicial de cada ruta creada, tiene que ser el primer puntos si o si. 
+
+**3. Personalización del comportamiento por punto:**
+
+![Variables Patrol](Imagenes/VariablesBP_Patrol.png)
+
+En el panel de detalles de cada `BP_PatrolPoint` encontrará variables adicionales (como `WaitTime` o *Tiempo de espera*). Esto le permite crear un comportamiento orgánico: puede hacer que el NPC llegue a un punto y espere 5 segundos, pero que al llegar a otro punto continúe caminando inmediatamente (espera = 0). También hay una varibale de Gameplay Tag, para asignar las animaciones que realizarán al llegar a dicho punto. Por último encontrará la variable `Want Anim Sequence` que si se activa hará que la secuencia de animaciones correspodiente a dicho Patrol Point se realice una detras de otra en vez de elegir solo una animación random de la lista. 
+
+### 2.8.4 Modularidad Animada: Gameplay Tags y Data Assets
 
 Uno de los mayores errores en el desarrollo de IA es "hardcodear" (fijar directamente en el código) las animaciones. Si le decimos al State Tree *"Reproduce la animación de huir de Pedro"*, ese State Tree ya no servirá para "María", porque intentará usar el esqueleto de Pedro.
 
@@ -319,12 +323,12 @@ Para resolver esto y hacer que nuestra IA sea escalable, la demo utiliza una arq
 **1. Las Etiquetas (Gameplay Tags)**
 Una *Gameplay Tag* es simplemente una etiqueta jerárquica (texto) que el motor reconoce globalmente. En lugar de decir "Reproduce Animación X", el State Tree ordena: *"Ejecuta la acción asociada a la etiqueta `Anim.Reaction.Scared`"*.
 
-* *¿Cómo usarlo?* Si abre el Sub-árbol `ST_NPC_Reactions` y vas al estado de `Reaction State` veras que la tarea `STT_PlayMontage`, es capaz de acceder a un data asset si el Gameplay Tag actual del NPC coincide con algun data asset contenido en la lista del NPC. Para establecer el Gameplay Tag actual al NPC tiene dos formas: usando una tarea en un estado anterior llamada `STT_InstanceTagReaction`, como puedes ver en nuestro arbol  `ST_NPC_Principal` hay un estado como `Threat State` que instacia el Gameplay Tag actual a `NPC.Reactions.ReactFlinch` de esta forma el Play Montage reproducirá las animaciones del data assets vinculado con ese tag. Otra forma es que acceda al Gameplay Tag del Patrol Point en el que esta ubicado y haga alguna animación en ese momento.
+* *¿Cómo usarlo?* Si abre el Sub-árbol `ST_NPC_Reactions`, ubicado en `Content/TFG-Castellanos-Sanchez/Blueprints/AI/StateTree/SubStateTree` y vas al estado de `Reaction State` veras que la tarea `STT_PlayMontage`, es capaz de acceder a un data asset si el Gameplay Tag actual del NPC coincide con algun data asset contenido en la lista del NPC. Para establecer el Gameplay Tag actual al NPC tiene dos formas: usando una tarea en un estado anterior llamada `STT_InstanceTagReaction`, como puedes ver en nuestro arbol  `ST_NPC_Principal` hay un estado como `Threat State` que instacia el Gameplay Tag actual a `NPC.Reactions.ReactFlinch` de esta forma el Play Montage reproducirá las animaciones del data assets vinculado con ese tag. Otra forma es que acceda al Gameplay Tag del Patrol Point en el que esta ubicado y haga alguna animación en ese momento.
 
 **2. El Diccionario de Animaciones (Data Assets)**
 
 Para que el NPC sepa qué animación física corresponde a esa etiqueta, utilizamos un **Data Asset**. Funciona como un diccionario de traducción personal de cada personaje.
-* En el directorio del proyecto, encontrará Data Assets creados en `TFG-Castellanos-Sanchez\Blueprints\NPCs\DataAssets` a partir de una clase personalizada que vemos en `TFG-Castellanos-Sanchez\Blueprints\PrimaryDataAssets`.
+* En el directorio del proyecto, encontrará Data Assets creados en `Content/TFG-Castellanos-Sanchez/Blueprints/NPCs/DataAssets` a partir de una clase personalizada que vemos en `TFG-Castellanos-Sanchez/Blueprints/PrimaryDataAssets`.
 * Si abre uno de estos Data Assets, verá:
   * **Clave (Key):** El Gameplay Tag (ej. `Anim.Reactions.Random`) con el se comparará en el `STT_PlayMontage` si tiene dicho data asset el NPC .
   * **Lista de Montage:** *Animations Montages* físicos que se reproducirán en el juego.
@@ -332,9 +336,9 @@ Para que el NPC sepa qué animación física corresponde a esa etiqueta, utiliza
 **3. Implementación para el usuario:**
 Si usted quiere añadir nuevas animaciones o crear un NPC completamente nuevo con nuestro sistema, siga estos pasos:
 
-1. **Crear su Diccionario:** Haga clic derecho en el Content Browser > *Miscellaneous* > *Data Asset*. Seleccione la clase de mapeo de animaciones que proporcionamos.
+1. **Crear su Diccionario:** Haga clic derecho en el Content Browser > *Miscellaneous* > *Data Asset*. Seleccione la clase de mapeo de animaciones que proporcionamos, 'PDA_Animation'.
 2. **Llenar el Diccionario:** Abra su nuevo Data Asset y añada tantas filas como necesite. Asigne una etiqueta (ej. `Anim.Reactions.Idle`) y añada en la lista *Animations Montages* de su propio personaje.
-3. **Equipar al Cerebro:** Vaya al Blueprint de su nuevo NPC. Seleccione su componente principal de comportamiento o variables y busque la ranura para el Data Asset de animación. Arrastre ahí el archivo que acaba de crear.
+3. **Equipar al Cerebro:** Vaya al Blueprint de su nuevo NPC. Seleccione su componente principal de comportamiento o variables y busque la ranura para el Data Asset de animación. Asigne ahí el archivo que acaba de crear.
 
 ![DataAsset](Imagenes/DataAssetAnim.png)
 
