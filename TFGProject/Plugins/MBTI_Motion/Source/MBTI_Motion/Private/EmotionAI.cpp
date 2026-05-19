@@ -29,7 +29,11 @@ struct FEmotionIAInternalModel
 
 bool UEmotionAI::CheckONNXDependenciesDynamic()
 {
-    FString BasePath = IPluginManager::Get().FindPlugin("EmotionsAnimations")->GetBaseDir() / TEXT("/Binaries/Win64");
+    if (IPluginManager::Get().FindPlugin("MBTI_Motion") == nullptr) {
+        UE_LOG(LogTemp, Error, TEXT("No se pudo encontrar la ruta del plugin MBTI_Motion"));
+        return false;
+    }
+    FString BasePath = IPluginManager::Get().FindPlugin("MBTI_Motion")->GetBaseDir() / TEXT("/Binaries/Win64");
     FString MainDLL = BasePath / TEXT("onnxruntime.dll");
 
     // Intentamos cargar la DLL principal sin ejecutar DllMain
