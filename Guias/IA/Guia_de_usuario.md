@@ -54,10 +54,10 @@ Una vez completada la instalación y generado el entorno virtual, proceda con lo
 > **Nota:** `SEQUENCE_LENGTH` y `BLOCK_SIZE` pueden ser del mismo tamaño.
 
 El sistema permite dos modalidades de entrenamiento:
-* **Entrenamiento Directo:** Ejecutando [`gru_only.bat`](#gruonly). 
+* **Entrenamiento Directo:** Ejecutando [`GRU_only.bat`](#gruonly). 
 * **Entrenamiento con Autoencoder (Aumento de datos):** Ejecutando [`Autoencoder_And_GRU.bat`](#autoencoderandgru). *(Existe una configuración por defecto en las secciones `[Autoencoder]` y `[GRU]` del `config.ini` que puede ser modificada según las necesidades del proyecto).*
 
-> **Nota** Se recomiendo usar `gru_only.bat` para el entrenamiento con el dataset que proporcionamos.
+> **Nota** Se recomiendo usar `GRU_only.bat` para el entrenamiento con el dataset que proporcionamos.
 
 Tras el entrenamiento, el modelo generado se ubicará en la carpeta `models`, quedando listo para su integración en Unreal Engine.
 
@@ -66,7 +66,7 @@ Tras el entrenamiento, el modelo generado se ubicará en la carpeta `models`, qu
 ### Pruebas y Validación (Testeo)
 Si desea validar el entrenamiento con nuevos datos empíricos:
 1. Añada los nuevos datos en un archivo llamado `realset.csv` dentro del directorio `dataset`.
-2. Ejecute el script [`testeo.bat`](#testeo) (requiere haber generado previamente el modelo).
+2. Ejecute el script [`Test.bat`](#testeo) (requiere haber generado previamente el modelo).
 3. Hay mas información del entrenamiento y validación dentro de la carpeta `graphs`.
 
 ---
@@ -398,12 +398,12 @@ Script principal de pipeline para generación de datos y entrenamiento:
 * Muestra un gráfico de dispersión en consola con la distribución de los nuevos datos.
 * Entrena el modelo GRU y exporta los archivos necesarios para Unreal Engine (`gru_model.onnx` y `gru_model.onnx.data`) y un archivo `gru_model.pth` para testeos locales.
 
-### `gru_only.bat`<a name="gruonly"></a>  
+### `GRU_only.bat`<a name="gruonly"></a>  
 Script para entrenamiento directo:
 * Entrena el modelo utilizando exclusivamente los datos del dataset configurado, aplicando codificación *One-Hot*.
 * Muestra por consola las matrices de confusión resultantes y el porcentaje de precisión (*Accuracy*) final del modelo.
 
-### `testeo.bat`<a name="testeo"></a>  
+### `Test.bat`<a name="testeo"></a>  
 Script de validación y auditoría:
 * Carga el modelo `gru_model.pth` de la carpeta `models` y realiza predicciones usando el dataset de prueba indicado.
 * Imprime por pantalla un análisis de correlación matemática entre las salidas reales del dataset de prueba y las inferidas por el modelo.

@@ -14,7 +14,7 @@ Para entrenar el modelo
 
 7) Poner el tamaño del bloque del dataset en BLOCK_SIZE.
 
-8) Usar Autoencoder_And_GRU.bat o gru_onehot.bat.
+8) Usar Autoencoder_And_GRU.bat o GRU_only.bat.
 
 
 
@@ -22,6 +22,6 @@ Si se quiere comprobar el entrenamiento.
 
 1) Abrir el archivo config.ini, ir al apartado dataset y poner el nombre del archivo .csv con nuevos datos en TESTER_CSV_NAME.
 
-2) Usar testeo.bat para comprobar la precisión y coorelaccion del modelo con los nuevos datos.
+2) Usar Test.bat para comprobar la precisión y coorelaccion del modelo con los nuevos datos.
 
 3) En la carpeta graphs hay graficas con mas información.
