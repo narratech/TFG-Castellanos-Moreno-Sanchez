@@ -1,6 +1,6 @@
-# <p align="center">MBTI-Motion: Animación adaptativa para personajes de videojuego con personalidad y emociones</p>
+# <p align="center">MBTI_Motion: Animación adaptativa para personajes de videojuego con personalidad y emociones</p>
 
-Este es el repositorio de software asociado al *Trabajo de Fin de Grado (TFG)* del Grado en Desarrollo de Videojuegos de la Universidad Complutense de Madrid titulado 'MBTI-Motion: Animación adaptativa mediante aprendizaje profundo para personajes de videojuego con personalidad y emociones}' y realizado durante el curso 2025-2026 bajo la dirección del Prof. Federico Peinado Gil.
+Este es el repositorio de software asociado al *Trabajo de Fin de Grado (TFG)* del Grado en Desarrollo de Videojuegos de la Universidad Complutense de Madrid titulado 'MBTI_Motion: Animación adaptativa mediante aprendizaje profundo para personajes de videojuego con personalidad y emociones}' y realizado durante el curso 2025-2026 bajo la dirección del Prof. Federico Peinado Gil.
 
 Los autores del TFG y responsables del repositorio son:
 * *Adrián Castellanos Ormeño*
